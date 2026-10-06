@@ -154,6 +154,13 @@ html[data-cb="1"] .btn.primary,html[data-cb="1"] .chip[aria-pressed=true],html[d
 .land .shots img{width:100%;display:block;aspect-ratio:16/10;object-fit:cover;object-position:top}
 .land .shots figcaption{font-size:12px;padding:6px 10px;color:var(--muted)}
 @media(max-width:560px){.land .steps{grid-template-columns:1fr}}
+
+.achs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ach{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:3px;font-size:12.5px;line-height:1.35;opacity:.62}
+.ach.on{opacity:1;border-color:var(--accent)}.ach b{font-size:13px}.ach small{color:var(--muted);font:11px var(--mono)}
+.ach-new .ach{margin-top:6px}
+.bpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}.bpgrid div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:flex;justify-content:space-between;font:12px var(--mono)}
+@media(max-width:560px){.achs{grid-template-columns:1fr}}
 </style>
 </head>
 <body>

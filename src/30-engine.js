@@ -40,7 +40,7 @@ function applyFx(S,e){const P=S.pend;
  for(const k in(e.bloc||{})){const ids=k==='own'?[S.party]:GRP[k]?GRP[k]:[k];ids.forEach(id=>bonus(S,id,e.bloc[k]))}
  if(e.gv){P.gv=P.gv||{};for(const k in e.gv)P.gv[k]=(P.gv[k]||0)+e.gv[k]}
  if(e.coal)coalFx(S,e.coal);
- if(e.crise&&S.crise){S.crise.sev+=e.crise.sev||0;S.crise.vac=(S.crise.vac||0)+(e.crise.vac||0)}
+ if(e.crise&&S.crise){S.crise.sev+=e.crise.sev||0;S.crise.vac=(S.crise.vac||0)+(e.crise.vac||0);S.crise.ac=(S.crise.ac||0)+(e.crise.ac||0)}
  if(e.late)e.late.forEach(x=>S.sched.push({...x}));
  if(e.perm){S.xg+=e.perm.g||0;S.xi+=e.perm.i||0;S.xinv+=e.perm.inv||0;S.xu+=e.perm.u||0}
  if(e.ideo)S.x=cl(S.x+e.ideo,-2,2)}

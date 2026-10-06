@@ -5,6 +5,7 @@ const step=(n,cmd,args,env)=>{console.log('\n▶',n);const r=spawnSync(cmd,args,
 step('build','node',['build.js']);
 step('sintaxe','node',['test/syntax.js']);
 step('calibração','node',['test/calibration.js'],{N:process.argv[2]==='rapido'?'4':'8'});
+step('crises em fases','node',['test/crises.js']);
 step('e2e jogo completo','node',['test/e2e-full.js']);
 step('e2e saída/sucessão','node',['test/e2e-exit.js','quit']);
 step('e2e interregno','node',['test/e2e-interregnum.js']);

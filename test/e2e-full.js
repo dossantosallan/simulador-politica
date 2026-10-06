@@ -5,6 +5,7 @@ const dom=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'h
 const w=dom.window,d=w.document;
 w.addEventListener('error',e=>console.log('ERR',e.message));const click=el=>el.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
 const q=s=>d.querySelector(s);
+if(q('[data-act=landgo]'))click(q('[data-act=landgo]'));const ni=q('#nameIn');if(ni){ni.value='Teste';}
 let tg=0;while(q('[data-act=tut]:not([data-i="0"]),[data-act=tutend]')&&tg++<10){const b=q('#sheet [data-act=tutend]')||q('#sheet [data-act=tut]:last-of-type');click(b)}
 if(!q('[data-act=start][data-k=PSB]'))errs.push('nostart '+q('#sheet').textContent.slice(0,60));
 click(q('[data-act=daily]'));if(!q('.tipbox'))errs.push('nodaily');

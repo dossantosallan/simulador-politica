@@ -140,6 +140,20 @@ html[data-cb="1"]{--good:#4aa3ff;--bad:#ff9f1c;--accent:#4aa3ff;--map-hi:#4aa3ff
 html[data-cb="1"] .btn.primary,html[data-cb="1"] .chip[aria-pressed=true],html[data-cb="1"] .tab[aria-pressed=true]{color:#02101f}
 @media (max-width:640px){body{font-size:14.5px}.wrap{padding:0 10px}.brand{font-size:21px}.hd{gap:8px}.btn{min-height:44px}.ctl button{width:38px;height:38px}#modal{padding:8px}#sheet{padding:14px}.big{font-size:52px}.rank{grid-template-columns:1fr}}
 :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+.namebox{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.namebox input{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 12px;font:15px var(--sans,inherit);width:100%;box-sizing:border-box}
+.namebox input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.land .landh{font-size:clamp(26px,5vw,38px);margin:2px 0 8px;line-height:1.1}.land .landh em{color:var(--accent);font-style:normal}
+.land .lead{font-size:15px;line-height:1.5;margin:0 0 12px}
+.land .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.land .steps div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;line-height:1.4}
+.land .steps b{font-size:13px}
+.land .shots{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:12px 0 0;padding-bottom:6px}
+.land .shots figure{flex:0 0 min(86%,420px);scroll-snap-align:start;margin:0;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.land .shots img{width:100%;display:block;aspect-ratio:16/10;object-fit:cover;object-position:top}
+.land .shots figcaption{font-size:12px;padding:6px 10px;color:var(--muted)}
+@media(max-width:560px){.land .steps{grid-template-columns:1fr}}
 </style>
 </head>
 <body>

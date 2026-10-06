@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Simulador de Política</title>
+<title>Brasil Simulator</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 20%27%3E%3Crect width=%2728%27 height=%2720%27 rx=%273%27 fill=%27%231fa857%27/%3E%3Cpath d=%27M14 3 24.5 10 14 17 3.5 10Z%27 fill=%27%23f7d117%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -161,11 +162,12 @@ html[data-cb="1"] .btn.primary,html[data-cb="1"] .chip[aria-pressed=true],html[d
 .ach-new .ach{margin-top:6px}
 .bpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}.bpgrid div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:flex;justify-content:space-between;font:12px var(--mono)}
 @media(max-width:560px){.achs{grid-template-columns:1fr}}
+.flag{height:.82em;width:auto;vertical-align:-.04em;margin-right:.45em}.landh .flag{height:.8em}
 </style>
 </head>
 <body>
 <header><div class="wrap hd">
- <div><div class="brand">Simulador de <em>Política</em></div><div class="eyebrow" id="eyebrow">Brasil</div></div>
+ <div><div class="brand"><svg class="flag" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#1fa857"/><path d="M14 3 24.5 10 14 17 3.5 10Z" fill="#f7d117"/></svg>Brasil <em>Simulator</em></div><div class="eyebrow" id="eyebrow">Brasil</div></div>
  <div class="sp"></div>
  <span class="pill" id="lineSub"></span>
  <button class="score" data-act="scoreinfo" title="Nota final projetada"><b id="score">0</b><span>nota projetada</span></button>

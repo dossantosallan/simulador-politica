@@ -77,7 +77,7 @@ function weighHTML(){const L=legacy(S),nm=['Crescimento per capita','Capital hum
  return `<h3 style="margin-top:14px">O que mais pesou</h3><div class="weigh"><div><p class="sub">Mais ajudou na nota</p>${up.map(x=>`<p><b>${x.n}</b>: ${fm(x.v,0)}/100 (${fm(x.pts,0)} de ${x.w} pontos)</p>`).join('')}</div><div><p class="sub">Mais custou</p>${dn.map(x=>`<p><b>${x.n}</b>: ${fm(x.v,0)}/100 (perdeu ${fm(x.lost,0)} de ${x.w} pontos)</p>`).join('')}</div></div>
  <p class="sub">Pior trimestre de crescimento: ${H[w].lbl} (${sg(H[w].g)}%). Melhor: ${H[bq].lbl} (${sg(H[bq].g)}%). Crises enfrentadas: ${cr}. Choques externos: ${lg.length?lg.join(', '):'nenhum'}. Leis aprovadas: ${S.laws.length}.</p>
  <div class="stats">${['idh','le','im','pov','hom','gini'].map(dl).join('')}</div>`}
-function shareText(sc){return `Simulador de Política · ${S.name?S.name+' · ':''}Dura · ${BLI[S.party].sig} · nota ${sc}/100 · PIB per capita ${sg(legacy(S).pcg,0)}% · código ${mkCode(S)}`}
+function shareText(sc){return `Brasil Simulator · ${S.name?S.name+' · ':''}Dura · ${BLI[S.party].sig} · nota ${sc}/100 · PIB per capita ${sg(legacy(S).pcg,0)}% · código ${mkCode(S)}`}
 function timelineHTML(){const leg=Object.keys(KIND).map(k=>`<span><svg width="14" height="14" viewBox="-7 -7 14 14">${mark(KIND[k][1],0,0,KIND[k][2])}</svg>${KIND[k][0]}</span>`).join('');
  return `<h3 style="margin-top:14px">Linha do tempo · PIB per capita (R$ mil)</h3>${timelineSVG()}<div class="hleg" style="margin-bottom:6px">${leg}</div>`}
 function succHTML(){const s=S.succ;if(!s)return '';const L=legacy(S);

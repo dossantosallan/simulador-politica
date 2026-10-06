@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador de Política</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#080c10;--panel:#0e151b;--panel2:#131c24;--line:#1f2b36;--ink:#e6edf3;--muted:#8393a1;--accent:#3be28a;--cyan:#3cc7f0;--warn:#f5b73b;--bad:#ff5a5f;--good:#3be28a;--map-lo:#15212b;--map-hi:#3be28a;--b1:#e5484d;--b2:#f0883e;--b3:#8b98a5;--b4:#3cc7f0;--b5:#5b8def;--head:'Barlow Condensed',system-ui,sans-serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
+*{box-sizing:border-box;margin:0}
+body{background:radial-gradient(1200px 500px at 70% -10%,#10202a 0,transparent 60%),var(--bg);color:var(--ink);font:15px/1.5 var(--sans);padding-bottom:60px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+header{border-bottom:1px solid var(--line);background:#0a1015cc;position:sticky;top:0;z-index:20;backdrop-filter:blur(8px)}
+.hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:10px}
+.brand{font:700 26px/1 var(--head);letter-spacing:.04em;text-transform:uppercase}
+.brand em{color:var(--accent);font-style:normal}
+.eyebrow{font:500 12px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.sp{flex:1}
+.score{border:1px solid var(--line);background:var(--panel);padding:4px 12px;border-radius:6px;text-align:center;cursor:pointer;color:inherit;font:inherit}
+.score b{display:block;font:600 26px/1 var(--mono);color:var(--accent)}
+.score span{font:500 10px var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.btn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font:500 13px var(--sans);cursor:pointer;text-align:left;min-height:38px}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn small{display:block;color:var(--muted);font-size:11.5px;font-weight:400}
+.btn.primary{background:var(--accent);color:#04120b;border-color:var(--accent);font-weight:600;text-align:center}
+.btn.ghost{background:transparent}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;padding:14px 0}
+.k{position:relative;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:6px;padding:8px 10px 6px;cursor:pointer;text-align:left;color:inherit;font:inherit;overflow:hidden}
+.k:hover{background:var(--panel2)}
+.k.good{border-left-color:var(--good)}.k.warn{border-left-color:var(--warn)}.k.bad{border-left-color:var(--bad);animation:al 1.6s ease-in-out infinite}
+@keyframes al{50%{box-shadow:inset 0 0 18px #ff5a5f30}}
+@media (prefers-reduced-motion:reduce){.k.bad{animation:none}}
+.k span{display:block;font:600 11px var(--head);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.k span i{float:right;font:500 10px var(--mono);font-style:normal;border:1px solid var(--line);border-radius:50%;width:15px;height:15px;text-align:center;line-height:13px}
+.k b{display:block;font:500 19px/1.2 var(--mono);white-space:nowrap}
+@media (min-width:900px){.kpis{grid-template-columns:repeat(5,1fr)}}
+.k.good b{color:var(--good)}.k.warn b{color:var(--warn)}.k.bad b{color:var(--bad)}
+.k small{display:block;color:var(--muted);font-size:11px}
+.k svg{display:block;width:100%;height:20px;margin-top:2px}
+.grid{display:grid;gap:14px;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.cardhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+h2,h3{font:600 20px/1.15 var(--head);letter-spacing:.05em;text-transform:uppercase}
+h3{font-size:16px;color:var(--ink)}
+h4{font:600 15px/1.25 var(--sans)}
+.sub{color:var(--muted);font-size:13px}
+.pill{display:inline-block;font:500 11px var(--mono);padding:2px 8px;border:1px solid var(--line);border-radius:99px;color:var(--muted)}
+.pill.good{color:var(--good);border-color:#3be28a55}.pill.warn{color:var(--warn);border-color:#f5b73b55}.pill.bad{color:var(--bad);border-color:#ff5a5f55}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chip{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 10px;font:500 12px var(--sans);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent);color:#04120b;border-color:var(--accent)}
+#map{width:100%;height:auto;max-height:560px;display:block}
+.tl{stroke:#0a1015;stroke-width:.8;cursor:pointer;transition:fill .3s}
+.tl:hover{stroke:#fff;stroke-width:1.4}
+#hl{stroke:#fff;stroke-width:2;pointer-events:none;stroke-linejoin:round}
+.ml{font:600 8.5px var(--head);fill:#04120bcc;text-anchor:middle;pointer-events:none;letter-spacing:.04em}
+.legend{display:flex;align-items:center;gap:8px;font:500 11px var(--mono);color:var(--muted);margin-top:6px}
+#ramp{height:8px;flex:1;border-radius:4px;background:linear-gradient(90deg,var(--map-lo),var(--map-hi))}
+.rank{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 14px}
+.rk{display:grid;grid-template-columns:28px 1fr 48px;gap:6px;align-items:center;background:none;border:0;color:var(--ink);font:12px var(--mono);cursor:pointer;padding:2px 0;text-align:left}
+.rk.on span{color:var(--accent)}
+.rk .tr{height:5px;background:var(--map-lo);border-radius:3px}.rk .tr i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.rk b{font-weight:500;text-align:right}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
+.stats>div{background:var(--panel2);border-radius:6px;padding:7px 9px}
+.stats span{display:block;font:600 10.5px var(--head);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stats b{font:500 16px var(--mono)}.stats small{display:block;color:var(--muted);font-size:11px}
+.up{color:var(--good)}.dn{color:var(--bad)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.srow{padding:7px 0;border-top:1px solid var(--line)}
+.srow:first-child{border-top:0}
+.srow .top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.sname{font-weight:600;font-size:14px;background:none;border:0;color:var(--ink);cursor:pointer;padding:0;text-align:left;border-bottom:1px dotted var(--muted)}
+.sname:hover{color:var(--accent)}
+.ctl{display:flex;align-items:center;gap:6px}
+.ctl button{width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:500 17px var(--mono);cursor:pointer}
+.ctl button:hover{border-color:var(--accent)}
+.ctl output{font:500 12px var(--mono);min-width:150px;text-align:center}
+.ctl output em{color:var(--muted);font-style:normal}
+.bar{display:flex;align-items:center;gap:8px;margin-top:4px}
+.track{flex:1;height:7px;border-radius:4px;background:var(--map-lo);overflow:hidden}.track i{display:block;height:100%;background:linear-gradient(90deg,#1a8f5a,var(--accent))}
+.bar span{font:500 12px var(--mono);min-width:90px;text-align:right}.bar em{font-style:normal;font-size:11px}
+.warnbox{border:1px solid #f5b73b55;background:#f5b73b12;color:var(--warn);padding:7px 10px;border-radius:6px;font-size:13px;margin:6px 0}
+dl{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font:13px var(--mono);margin:8px 0}
+dt{color:var(--muted)}dd{margin:0;text-align:right}dt.bad,dd.bad{color:var(--bad)}dt.good,dd.good{color:var(--good)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.bill{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:10px;margin-top:8px;cursor:pointer}
+.bill.on{border-color:var(--accent)}
+.bill p{font-size:13px;color:var(--muted);margin-top:4px}.bill p.hint{color:var(--ink)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.pj{display:grid;grid-template-columns:58px 1fr 62px;gap:8px;align-items:center;font:12px var(--mono);margin-top:4px}
+.pj .t{position:relative;height:7px;background:var(--map-lo);border-radius:4px}.pj .t i{display:block;height:100%;background:var(--cyan);border-radius:4px}.pj .t u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff}
+.hemi{width:100%;max-width:340px;display:block;margin:0 auto}
+.hleg{display:flex;flex-wrap:wrap;gap:4px 12px;font:11.5px var(--mono);color:var(--muted);margin-top:6px}.hleg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+.ap{display:flex;align-items:center;gap:6px;font:12px var(--mono);color:var(--muted);margin-bottom:6px}.ap i{width:14px;height:14px;border-radius:50%;border:1px solid var(--muted)}.ap i.on{background:var(--accent);border-color:var(--accent)}
+#hist{width:100%;height:auto;display:block;touch-action:none}
+#hist text{font:10px var(--mono);fill:var(--muted)}#hist .gl{stroke:var(--line)}
+.feed{list-style:none;padding:0;font-size:13px;display:flex;flex-direction:column;gap:5px}.feed time{font:500 11px var(--mono);color:var(--accent);margin-right:8px}
+#tip{position:fixed;z-index:60;background:#05080b;border:1px solid var(--line);padding:6px 9px;border-radius:6px;font:12px/1.4 var(--mono);pointer-events:none;max-width:260px}
+#modal{position:fixed;inset:0;background:#000b;z-index:50;overflow:auto;padding:16px;display:flex}
+#modal[hidden]{display:none}
+#sheet{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:640px;width:100%;margin:auto}
+#sheet h2{margin:2px 0 8px;font-size:26px}
+#sheet p{margin:6px 0}
+.opt{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:8px;color:var(--ink);cursor:pointer;font:inherit}
+.opt:hover{border-color:var(--accent)}.opt b{display:block;font-weight:600}.opt span{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.tag{display:inline-block;font:600 11px var(--mono);color:#04120b;background:var(--warn);padding:1px 8px;border-radius:99px;letter-spacing:.04em;margin-bottom:4px}
+.tag.pos{background:var(--accent)}
+.rep ul{padding-left:18px}.rep li{margin:3px 0}
+.tipbox{border-left:3px solid var(--accent);background:#3be28a12;padding:8px 12px;margin:10px 0;border-radius:0 6px 6px 0;font-size:14px}
+.vrow{display:grid;grid-template-columns:90px 1fr 42px;gap:8px;align-items:center;font:12px var(--mono)}
+.vtrack{position:relative;height:8px;background:var(--map-lo);border-radius:4px}.vtrack i{display:block;height:100%;background:var(--cyan);border-radius:4px}.vtrack u{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#fff}
+.sc6{display:grid;gap:6px;margin:10px 0}
+.sc6 div{display:grid;grid-template-columns:1fr 130px 34px;gap:8px;align-items:center;font-size:13px}
+.big{font:600 64px/1 var(--mono);color:var(--accent)}
+[hidden]{display:none!important}
+.tabs{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap}
+.tab{background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:8px 16px;font:600 15px var(--head);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.tab[aria-pressed=true]{color:#04120b;background:var(--accent);border-color:var(--accent)}
+.leisgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+footer{color:var(--muted);font-size:12px;padding:20px 0}
+.k.ind.sel{border-color:var(--accent);background:var(--panel2)}.ikpis{padding:6px 0 0}
+#imap{width:100%;height:auto;max-height:520px;display:block}#ihl{stroke:#fff;stroke-width:2;pointer-events:none}
+.tb{width:100%;border-collapse:collapse;font:12px var(--mono)}.tb th,.tb td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--line)}.tb th:first-child,.tb td:first-child{text-align:left}.tb tr[data-act]{cursor:pointer}.tb tr.on td{outline:1px solid var(--accent);outline-offset:-1px}
+.th{background:none;border:0;color:var(--muted);font:600 11px var(--head);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}.th.on{color:var(--accent)}.twrap{overflow-x:auto}
+.crow{display:grid;grid-template-columns:minmax(150px,1.3fr) minmax(120px,1fr) auto auto;gap:8px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.crow:first-child{border-top:0}.crow:not(.in){opacity:.85}
+.crow .cs .bar span{min-width:30px}.crow .cs{min-width:0}.crow .cn{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.crow .cn i{width:10px;height:10px;border-radius:50%}
+@media (max-width:640px){.crow{grid-template-columns:1fr 1fr}.crow .cn{grid-column:1/-1}}
+.voc{margin:8px 0}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:1px;margin:4px 0}.vbar i{display:block}
+.vleg{display:flex;flex-wrap:wrap;gap:2px 12px;font:11.5px var(--mono);color:var(--muted)}.vleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.vagro{background:#8bc34a}.vind{background:#f0883e}.vmin{background:#b58cff}.vserv{background:#3cc7f0}
+.lc{width:100%;height:auto;display:block;touch-action:none}.lc text{font:10px var(--mono);fill:var(--muted)}.lc .gl{stroke:var(--line)}
+.weigh{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0}@media (max-width:640px){.weigh{grid-template-columns:1fr}}
+.cbar{display:flex;gap:8px;margin-top:8px}
+html[data-cb="1"]{--good:#4aa3ff;--bad:#ff9f1c;--accent:#4aa3ff;--map-hi:#4aa3ff;--warn:#f7e04b}
+html[data-cb="1"] .btn.primary,html[data-cb="1"] .chip[aria-pressed=true],html[data-cb="1"] .tab[aria-pressed=true]{color:#02101f}
+@media (max-width:640px){body{font-size:14.5px}.wrap{padding:0 10px}.brand{font-size:21px}.hd{gap:8px}.btn{min-height:44px}.ctl button{width:38px;height:38px}#modal{padding:8px}#sheet{padding:14px}.big{font-size:52px}.rank{grid-template-columns:1fr}}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+</style>
+</head>
+<body>
+<header><div class="wrap hd">
+ <div><div class="brand">Simulador de <em>Política</em></div><div class="eyebrow" id="eyebrow">Brasil</div></div>
+ <div class="sp"></div>
+ <span class="pill" id="lineSub"></span>
+ <button class="score" data-act="scoreinfo" title="Nota final projetada"><b id="score">0</b><span>nota projetada</span></button>
+ <button class="btn primary" id="btnEnd" data-act="end">Encerrar trimestre</button>
+ <button class="btn ghost" data-act="menu">Menu</button>
+</div></header>
+<main class="wrap">
+ <section class="kpis" id="kpis" aria-label="Indicadores"></section>
+ <nav class="tabs" aria-label="Seções"><button class="tab" data-act="tab" data-k="gov" aria-pressed="true">Governo</button><button class="tab" data-act="tab" data-k="leis" aria-pressed="false">Projetos de lei</button><button class="tab" data-act="tab" data-k="coal" aria-pressed="false">Coalizão</button><button class="tab" data-act="tab" data-k="ind" aria-pressed="false">Indicadores</button></nav>
+ <div class="grid" id="tab-gov">
+  <div class="col">
+   <section class="card"><div class="cardhead"><div><h2>Mapa do Brasil</h2><p class="sub">Clique em um estado para ver e ajustar os aportes.</p></div></div>
+    <div class="chips" id="chips"></div>
+    <svg id="map" role="img" aria-label="Mapa dos estados"></svg>
+    <div class="legend"><span id="lgLo"></span><div id="ramp"></div><span id="lgHi"></span></div>
+    <h3 style="margin-top:14px">Ranking · <span id="rkSub"></span></h3><div class="rank" id="rank"></div></section>
+   <section class="card" id="stCard"></section>
+   <section class="card"><div class="cardhead"><h2>Séries históricas</h2></div><div class="chips" id="htabs"></div><svg id="hist" viewBox="0 0 520 230"></svg></section>
+  </div>
+  <div class="col">
+   <section class="card"><div class="cardhead"><h2>Orçamento federal</h2></div>
+    <label class="sub" for="tax">Carga tributária: <b id="taxOut" style="color:var(--ink)"></b></label>
+    <input type="range" id="tax" min="15" max="25" step=".5" value="19">
+    <p class="sub" style="margin-top:4px">Menos imposto estimula o crescimento e a popularidade, mas reduz a receita.</p>
+    <dl id="fiscal"></dl><div id="fwarn"></div>
+    <div class="cardhead" style="margin-top:12px"><h3>Aportes em todos os estados</h3><button class="btn" data-act="reset">Zerar ajustes</button></div>
+    <div id="nat"></div></section>
+   <section class="card"><div class="cardhead"><div><h2>Congresso</h2><p class="sub" id="pautaSub"></p></div></div>
+    <div class="ap" id="apBar"></div><div class="acts" id="acts"></div><p class="sub" id="actMsg" role="status"></p>
+    <div id="pauta"></div>
+    <div id="hemis" style="margin-top:12px"></div><div class="hleg" id="hleg"></div><p class="sub" id="hemiSub"></p></section>
+   <section class="card"><div class="cardhead"><h2>Diário</h2></div><ul class="feed" id="feed"></ul></section>
+  </div>
+ </div>
+ <section id="tab-leis" hidden><div class="card"><div class="cardhead"><div><h2>Projetos de lei</h2><p class="sub" id="leisSub"></p></div></div><p class="sub">Leis ousadas mudam o país, mas exigem maioria qualificada (3/5) e apoio popular. Se passarem sem apoio, provocam ampla rejeição.</p><div class="chips" id="leisChips"></div><div class="leisgrid" id="leisList"></div></div></section>
+<section id="tab-coal" hidden><div class="grid"><div class="col"><section class="card"><div class="cardhead"><div><h2>Coalizão e ministérios</h2><p class="sub" id="coalSub"></p></div></div><p class="sub">Dê ministérios aos partidos da base para mantê-los fiéis. Partidos com ministérios abaixo da cota justa ficam insatisfeitos, votam contra e podem sair. Ministérios demais para partidos do Centrão elevam o risco de escândalo.</p><div id="coalList"></div></section></div><div class="col"><section class="card"><div class="cardhead"><h2>Disputa com o rival</h2></div><div id="rivalBox"></div></section></div></div></section>
+ <section id="tab-ind" hidden><div class="card"><div class="cardhead"><div><h2>Indicadores sociais e de desenvolvimento</h2><p class="sub">Calculados a partir dos índices de saúde, educação, infraestrutura, segurança e assistência, e da renda. Clique em um indicador para ver o mapa.</p></div></div><div class="kpis ikpis" id="indCards"></div></div>
+ <div class="grid" style="margin-top:14px"><div class="col"><section class="card"><div class="cardhead"><div><h2 id="iSub"></h2><p class="sub" id="iDesc"></p></div></div><svg id="imap" role="img" aria-label="Mapa do indicador selecionado"></svg><p class="sub" id="iLg"></p><h3 style="margin-top:12px">Evolução nacional</h3><div id="iHist"></div></section></div>
+ <div class="col"><section class="card" id="iState"></section><section class="card"><div class="cardhead"><h3>Estados</h3></div><div class="twrap"><table class="tb" id="iTable"></table></div><h3 style="margin-top:12px">Regiões</h3><div class="twrap"><table class="tb" id="iReg"></table></div></section></div></div></section>
+ <footer>Simulação simplificada para fins de entretenimento e estudo. Valores e relações são estilizados.</footer>
+</main>
+<div id="tip" hidden></div>
+<div id="modal" hidden role="dialog" aria-modal="true"><div id="sheet"></div></div>
+<script>

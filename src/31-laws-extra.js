@@ -1,0 +1,17 @@
+// LAWS3-START
+(()=>{
+const C=(id,t,tipo,b,d,h,fx,o)=>Object.assign({id,t,tipo,b,d,h,fx},o||{});
+const BD=(o)=>Object.assign({bold:1},o);
+LAWS.push(
+C('exc','Estado de exceção contra facções','PEC',1.6,'Poderes especiais e suspensão de garantias para desarticular organizações criminosas (inspirado em El Salvador).','Segurança +3 ao ano, investimento privado menor, nota de crédito −1 e risco institucional; forte rejeição à esquerda e protestos se durar muitos trimestres',{idx:{seg:3},inv:-.3,rat:-1,inst:18,mood:{all:3},bloc:{E:-15,CE:-10},sched:[{t:6,mood:-4,msg:'O estado de exceção se prolongou e as ruas reagem com protestos.'}]},BD({pop:8,only:[.5,2]})),
+C('motosserra','Choque libertário (motosserra)','PEC',1.8,'Déficit zero, corte radical de ministérios e subsídios (Argentina).','Despesa obrigatória −1,5% do PIB e inflação menor, mas desemprego sobe, crescimento cai no curto prazo e a aprovação despenca',{mand:-.002,infl:-.4,gn:-.011,rat:2,idx:{social:-6,saude:-5,edu:-5},unem:2.5,mood:{all:-9},inst:14,perm:{g:-.002},sched:[{t:8,pg:-.003,mood:-4,msg:'O choque deixou cicatrizes: o crescimento estrutural e os serviços públicos sofrem.'}]},BD({pop:-14,only:[.6,2]})),
+C('dolar','Dolarização','PEC',1.3,'Troca a moeda nacional pelo dólar (Equador, El Salvador, Panamá).','Inflação e juros caem forte, mas o governo perde a política monetária; exige reservas e há risco de crise adiante',{infl:-.4,rate:-.0015,inv:.2,rat:1,inst:8,sched:[{t:5,rat:-12,inv:-2.5,pg:-.003,mood:-6,p:.8,msg:'A dolarização revelou-se frágil: sem política monetária, o país sofreu fuga de capitais.'}]},BD({pop:-6,only:[.4,2]})),
+C('anticorr','Agência anticorrupção com poderes fortes','PL',0,'Órgão independente com poder de investigar e punir (Hong Kong, Singapura).','Nota de crédito +2, investimento +0,4 p.p. e metade do risco de escândalos; o Centrão perde apoio',{inv:.4,rat:1,bloc:{C:-14},flag:'anti'}),
+C('referendo','Referendos vinculantes','PEC',-.2,'Cidadãos aprovam leis diretamente (Suíça).','Leis ousadas com apoio popular de 55% ou mais passam por referendo, contornando o Congresso',{mood:{all:1},flag:'refer'},BD({pop:0})),
+C('parl','Parlamentarismo','PEC',.3,'O governo passa a depender da confiança do Parlamento (Reino Unido, Alemanha).','Voto de desconfiança: sem apoio no Congresso por um ano você cai, mesmo com boa aprovação; a coalizão ganha peso',{inst:6,flag:'parl'},BD({pop:-10})),
+C('planej','Planejamento econômico central','PEC',-1.9,'O Estado fixa metas por setor (URSS, China, Cuba).','Indústria e infraestrutura crescem rápido no início (+0,5 p.p.), mas a eficiência cai com o tempo, o investimento privado despenca e a inflação é reprimida',{gn:.005,infl:-.5,inv:-1.2,idx:{infra:1.5,edu:.3},mand:.01,vs:{ind:.004},mood:{all:-3},inst:15,sched:[{t:10,pg:-.008,msg:'A economia planificada perdeu eficiência: o crescimento estrutural caiu.'}]},BD({pop:-12,only:[-2,-.5]})),
+C('nacbanco','Nacionalização dos bancos','PEC',-1.8,'Crédito direcionado a áreas prioritárias (França, 1981-82; Cuba).','Juros menores para os mais pobres e assistência social sobe, mas há fuga de capitais, nota de crédito muito pior e forte rejeição do mercado',{rate:-.01,rat:-10,idx:{social:1.2},vs:{serv:-.003},mood:{all:-2},inst:20,sched:[{t:2,rat:-8,inv:-2,msg:'Houve fuga de capitais após a nacionalização dos bancos.'}]},BD({pop:-8,only:[-2,-.5]}))
+);
+LAWS.forEach(l=>{LAW[l.id]=l});
+})();
+// LAWS3-END

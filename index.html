@@ -117,6 +117,11 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .sc6{display:grid;gap:6px;margin:10px 0}
 .sc6 div{display:grid;grid-template-columns:1fr 130px 34px;gap:8px;align-items:center;font-size:13px}
 .big{font:600 64px/1 var(--mono);color:var(--accent)}
+[hidden]{display:none!important}
+.tabs{display:flex;gap:6px;margin:0 0 12px}
+.tab{background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:8px 16px;font:600 15px var(--head);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.tab[aria-pressed=true]{color:#04120b;background:var(--accent);border-color:var(--accent)}
+.leisgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
 footer{color:var(--muted);font-size:12px;padding:20px 0}
 :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 </style>
@@ -132,7 +137,8 @@ footer{color:var(--muted);font-size:12px;padding:20px 0}
 </div></header>
 <main class="wrap">
  <section class="kpis" id="kpis" aria-label="Indicadores"></section>
- <div class="grid">
+ <nav class="tabs" aria-label="Seções"><button class="tab" data-act="tab" data-k="gov" aria-pressed="true">Governo</button><button class="tab" data-act="tab" data-k="leis" aria-pressed="false">Projetos de lei</button></nav>
+ <div class="grid" id="tab-gov">
   <div class="col">
    <section class="card"><div class="cardhead"><div><h2>Mapa do Brasil</h2><p class="sub">Clique em um estado para ver e ajustar os aportes.</p></div></div>
     <div class="chips" id="chips"></div>
@@ -157,6 +163,7 @@ footer{color:var(--muted);font-size:12px;padding:20px 0}
    <section class="card"><div class="cardhead"><h2>Diário</h2></div><ul class="feed" id="feed"></ul></section>
   </div>
  </div>
+ <section id="tab-leis" hidden><div class="card"><div class="cardhead"><div><h2>Projetos de lei</h2><p class="sub" id="leisSub"></p></div></div><p class="sub">Leis ousadas mudam o país, mas exigem maioria qualificada (3/5) e apoio popular. Se passarem sem apoio, provocam ampla rejeição.</p><div class="chips" id="leisChips"></div><div class="leisgrid" id="leisList"></div></div></section>
  <footer>Simulação simplificada para fins de entretenimento e estudo. Valores e relações são estilizados.</footer>
 </main>
 <div id="tip" hidden></div>
@@ -179,14 +186,33 @@ const UFI=Object.fromEntries(UF.map(u=>[u.uf,u]));
 const G0={N:.019,NE:.015,CO:.019,SE:.011,S:.013},POPG={N:.009,NE:.002,CO:.008,SE:.003,S:.003};
 const ROFF={N:{edu:-6,saude:-4,infra:-14,seg:-6,amb:20},NE:{edu:-4,saude:-2,infra:-8,seg:-12,amb:6},CO:{edu:-2,saude:-2,infra:-2,seg:-4,amb:-6},SE:{edu:0,saude:0,infra:6,seg:-2,amb:-8},S:{edu:2,saude:2,infra:2,seg:4,amb:4}};
 function idx0(u){const o=ROFF[u.reg],b=25+.55*u.dev;return{edu:cl(b+o.edu),saude:cl(b+o.saude),infra:cl(b+o.infra),seg:cl(b+o.seg),tech:cl(.9*u.dev-8),social:cl(28+.4*u.dev),amb:cl(45+o.amb)}}
-const BL=[{id:'E',n:'Esquerda',pos:-1.6,cd:85,sn:12,c:'--b1'},{id:'CE',n:'Centro-esquerda',pos:-.7,cd:45,sn:10,c:'--b2'},{id:'C',n:'Centrão',pos:0,cd:190,sn:28,c:'--b3'},{id:'CD',n:'Centro-direita',pos:.7,cd:90,sn:15,c:'--b4'},{id:'D',n:'Direita',pos:1.6,cd:103,sn:16,c:'--b5'}];
+const BL=[
+{id:'SOL',sig:'SOL',n:'Socialismo e Liberdade',pos:-1.9,cd:12,sn:1,col:'#c0392b'},
+{id:'PT',sig:'PT',n:'Partido do Trabalho',pos:-1.6,cd:70,sn:9,col:'#e5484d'},
+{id:'PSB',sig:'PSB',n:'Partido Socialista do Brasil',pos:-.9,cd:16,sn:4,col:'#f0883e'},
+{id:'PDT',sig:'PDT',n:'Partido Democrata Trabalhista',pos:-.6,cd:17,sn:3,col:'#f5b73b'},
+{id:'MDB',sig:'MDB',n:'Movimento Democrático do Brasil',pos:0,cd:44,sn:10,col:'#9aa7b3'},
+{id:'PSD',sig:'PSD',n:'Partido Social Democrata',pos:.1,cd:46,sn:15,col:'#7f8fa0'},
+{id:'OUT',sig:'Outros',n:'Pequenos partidos',pos:.1,cd:53,sn:2,col:'#5e6a75'},
+{id:'PSDB',sig:'PSDB',n:'Partido da Social Democracia do Brasil',pos:.4,cd:15,sn:3,col:'#3cc7f0'},
+{id:'UB',sig:'UB',n:'União do Brasil',pos:.5,cd:55,sn:9,col:'#35a7d6'},
+{id:'PPN',sig:'PPN',n:'Partido Progressista Nacional',pos:.8,cd:48,sn:7,col:'#4d8bd8'},
+{id:'REP',sig:'REP',n:'Partido Republicano',pos:1,cd:42,sn:4,col:'#5b6fe0'},
+{id:'PLB',sig:'PLB',n:'Partido Liberal Brasil',pos:1.7,cd:95,sn:14,col:'#7b5be0'}];
+const GRP={E:['SOL','PT'],CE:['PSB','PDT'],C:['MDB','PSD','OUT','UB','PPN'],CD:['PSDB','REP'],D:['PLB']};
+const GRPN={E:'Esquerda',CE:'Centro-esquerda',C:'Centrão',CD:'Centro-direita',D:'Direita'};
+const BLI=Object.fromEntries(BL.map(b=>[b.id,b]));
 const IDEO=[
-{k:'E',n:'Esquerda',x:-1.6,d:'Estado indutor. Educação, saúde, assistência e meio ambiente rendem até 17% mais por real investido. Base forte no Nordeste e alta rejeição no Sul e no Centro-Oeste. Congresso difícil.'},
-{k:'CE',n:'Centro-esquerda',x:-.7,d:'Prioridade social com pragmatismo fiscal. Bônus moderado em educação, saúde e assistência. Boa aceitação no Nordeste, Minas e Norte; rejeição no Sul.'},
-{k:'C',n:'Centro',x:0,d:'Pragmático. Pequena vantagem em todas as áreas, pouca rejeição em qualquer região e boa relação com o Centrão. Sem base fiel em nenhuma delas.'},
-{k:'CD',n:'Centro-direita',x:.7,d:'Foco em infraestrutura, segurança e tecnologia com disciplina fiscal. Boa aceitação no Sul, Centro-Oeste e Sudeste; rejeição no Nordeste.'},
-{k:'D',n:'Direita',x:1.6,d:'Estado enxuto. Infraestrutura, segurança e tecnologia rendem até 17% mais. Base forte no Sul e no Centro-Oeste, alta rejeição no Nordeste.'}];
-const ELECT=[2030,2034,2038,2042,2046,2050],END=2054;
+{k:'PT',d:'Estado indutor e foco social. Educação, saúde, assistência e meio ambiente rendem até 17% mais por real investido. Base forte no Nordeste, alta rejeição no Sul e no Centro-Oeste. Maior bancada de esquerda, mas o Congresso é difícil.'},
+{k:'PSB',d:'Esquerda moderada com pragmatismo fiscal. Bônus em educação, saúde e assistência. Boa aceitação no Nordeste, Minas e Norte; rejeição no Sul. Bancada pequena.'},
+{k:'PDT',d:'Trabalhismo com ênfase em educação e indústria. Aceitação moderada no Sul e no Nordeste. Bancada pequena, dependente do Centrão.'},
+{k:'MDB',d:'Pragmático e de centro. Pequena vantagem em todas as áreas, pouca rejeição em qualquer região e boa relação com o Centrão. Sem base fiel.'},
+{k:'PSD',d:'Centro de gestão, forte em prefeituras e com boa relação com governadores. Pouca rejeição e pouca paixão do eleitorado.'},
+{k:'UB',d:'Centro-direita de grande capilaridade. Foco em infraestrutura e disciplina fiscal. Boa aceitação no Sul, Centro-Oeste e Sudeste.'},
+{k:'PSDB',d:'Centro-direita técnico, com foco em responsabilidade fiscal e reformas. Boa imagem no mercado e bancada pequena.'},
+{k:'REP',d:'Direita conservadora e evangélica, com base forte em periferias urbanas e no Norte. Prioriza segurança e infraestrutura.'},
+{k:'PLB',d:'Direita liberal e conservadora. Estado enxuto, infraestrutura, segurança e tecnologia rendem até 17% mais. Base forte no Sul e no Centro-Oeste, alta rejeição no Nordeste. Maior bancada da Câmara.'}].map(o=>({...o,x:BL.find(b=>b.id===o.k).pos,n:BL.find(b=>b.id===o.k).n,sig:o.k}));
+const ELECT=[2030,2034,2038,2042,2046,2050],MUN=[2028,2032,2036,2040,2044,2048,2052],END=2054;
 const ideoName=x=>x<-1.2?'Esquerda':x<-.35?'Centro-esquerda':x<.35?'Centro':x<1.2?'Centro-direita':'Direita';
 const popSum=S=>UF.reduce((a,u)=>a+S.st[u.uf].pop,0);
 const gdp=S=>UF.reduce((a,u)=>a+S.st[u.uf].pib,0);
@@ -209,7 +235,7 @@ function newState(x){
  UF.forEach(u=>{S.st[u.uf].appr=approval(S,u)});
  BL.forEach(b=>{S.bl[b.id]={b:0};S.seats[b.id]={cd:b.cd,sn:b.sn}});
  S.pc0=gdp(S)/popSum(S);
- S.nb=Object.fromEntries(SEC.map(x=>[x.id,avgIdx(S,x.id)]));S.hist.push(hrow(S,'T4/2026',2.5,76));
+ S.party='PT';S.nb=Object.fromEntries(SEC.map(x=>[x.id,avgIdx(S,x.id)]));S.hist.push(hrow(S,'T4/2026',2.5,76));
  return S}
 function hrow(S,lbl,g,dr){return{lbl,appr:natAppr(S),rej:natRej(S),share:natShare(S),g,infl:S.infl,unem:S.unem,dr,pc:gdp(S)/popSum(S),I:S.I,rt:S.rt,rate:ratePct(S),pib:gdp(S)}}
 const ratePct=S=>cl(.045+(43-S.rt)*.0007,.02,.12)*100;
@@ -345,7 +371,7 @@ function fiscal(S){const L=lawSum(S),gd=gdp(S),pt=popSum(S),B=.04*gd;let disc=0;
  const rev=(S.tax+L.rev)*gd,mand=(.15+L.mand)*gd,rate=cl(.045+(43-S.rt)*.0007+L.rate+(S.reg?S.reg.rate*[.6,1,1.4][S.diff==null?1:S.diff]:0),.02,.14),intr=rate*S.debt,prim=rev-mand-disc,def=intr-prim;
  return{gd,B,disc,rev,mand,prim,intr,def,defPct:def/gd*100,rate,cost:S.pend.cost,L}}
 function bonus(S,id,v){S.bl[id].b=cl(S.bl[id].b+v,-30,45)}
-const ownBloc=S=>BL.reduce((a,b)=>Math.abs(S.x-b.pos)<Math.abs(S.x-a.pos)?b:a).id;
+const ownBloc=S=>S.party;
 const regOf=(S,k)=>UF.filter(u=>k==='all'||u.reg===k||u.uf===k);
 function applyFx(S,e){const P=S.pend;
  if(e.gn)P.gn+=e.gn;if(e.infl)P.infl+=e.infl;if(e.cost)P.cost+=e.cost;
@@ -355,19 +381,19 @@ function applyFx(S,e){const P=S.pend;
  for(const k in(e.idx||{}))UF.forEach(u=>{S.st[u.uf].idx[k]=cl(S.st[u.uf].idx[k]+e.idx[k])});
  for(const k in(e.ridx||{}))for(const s in e.ridx[k])regOf(S,k).forEach(u=>{S.st[u.uf].idx[s]=cl(S.st[u.uf].idx[s]+e.ridx[k][s])});
  for(const k in(e.rel||{}))UF.filter(u=>{const d=Math.abs(S.x-S.st[u.uf].gx);return k==='all'||u.reg===k||u.uf===k||(k==='opp'&&d>1.2)||(k==='ally'&&d<=1.2)}).forEach(u=>{S.st[u.uf].rel=cl(S.st[u.uf].rel+e.rel[k])});
- for(const k in(e.bloc||{}))bonus(S,k==='own'?ownBloc(S):k,e.bloc[k]);
+ for(const k in(e.bloc||{})){const ids=k==='own'?[S.party]:GRP[k]?GRP[k]:[k];ids.forEach(id=>bonus(S,id,e.bloc[k]))}
  if(e.ideo)S.x=cl(S.x+e.ideo,-2,2)}
-function blocS(S,i){return cl(66-24*Math.abs(S.x-BL[i].pos)+.35*(natAppr(S)-45)+S.bl[BL[i].id].b,0,100)}
+function blocS(S,i){return cl(66-24*Math.abs(S.x-BL[i].pos)+.35*(natAppr(S)-45)+S.bl[BL[i].id].b+(BL[i].id===S.party?14:0),0,100)}
 function pYes(S,law,i){return cl(.2+.6*blocS(S,i)/100+.28*(1-cl(Math.abs(law.b-BL[i].pos)/2.2,0,1)),.03,.97)}
 function need(law){return law.tipo==='PEC'?{c:308,s:49}:{c:257,s:41}}
 function proj(S,law){let c=0,s=0;BL.forEach((b,i)=>{const p=pYes(S,law,i);c+=S.seats[b.id].cd*p;s+=S.seats[b.id].sn*p});return{c,s,n:need(law)}}
 function vote(S,law){let c=0,s=0;BL.forEach((b,i)=>{const p=pYes(S,law,i),j=()=>cl(p+(Math.random()-.5)*.16,0,1);c+=Math.round(S.seats[b.id].cd*j());s+=Math.round(S.seats[b.id].sn*j())});const n=need(law);return{c,s,n,pass:c>=n.c&&s>=n.s}}
 const supportNat=S=>BL.reduce((a,b,i)=>a+S.seats[b.id].cd*blocS(S,i),0)/513;
-function genPauta(S){const pool=LAWS.filter(l=>!S.laws.includes(l.id)&&(!l.only||(S.x>=l.only[0]&&S.x<=l.only[1]))).map(l=>l.id).sort(()=>Math.random()-.5);S.pauta=pool.slice(0,3);S.sent=[];S.selLaw=S.pauta[0]||null}
+function genPauta(S){const pool=LAWS.filter(l=>!l.bold&&!S.laws.includes(l.id)&&(!l.only||(S.x>=l.only[0]&&S.x<=l.only[1]))).map(l=>l.id).sort(()=>Math.random()-.5);S.pauta=pool.slice(0,3);S.sent=[];S.selLaw=S.pauta[0]||null}
 function passLaw(S,id){const f=LAW[id].fx;S.laws.push(id);const e={};if(f.mood)e.mood=f.mood;if(f.rel)e.rel={all:f.rel};if(f.once)e.cost=f.once;if(f.rat)e.rat=f.rat;applyFx(S,e)}
 function act(S,k,a){if(S.ap<1)return 'Sem pontos de articulação neste trimestre.';
- if(k==='emenda'){S.ap--;S.pend.cost+=8;bonus(S,'C',12);bonus(S,'CD',5);bonus(S,'CE',5);return 'Emendas liberadas (R$ 8 bi). Centrão e blocos vizinhos mais favoráveis.'}
- if(k==='cargos'){S.ap--;const b=BL.find(x=>x.id===a);bonus(S,a,14);S.x=cl(S.x+(b.pos-S.x)*.08,-2,2);return `Negociação de cargos com ${b.n}. Apoio maior, e sua linha se aproxima um pouco do bloco.`}
+ if(k==='emenda'){S.ap--;S.pend.cost+=8;GRP.C.forEach(i=>bonus(S,i,12));GRP.CD.forEach(i=>bonus(S,i,5));GRP.CE.forEach(i=>bonus(S,i,5));return 'Emendas liberadas (R$ 8 bi). Centrão e blocos vizinhos mais favoráveis.'}
+ if(k==='cargos'){S.ap--;const g=GRP[a],ps=g.map(id=>BLI[id]);g.forEach(id=>bonus(S,id,14));const avg=ps.reduce((q,b)=>q+b.pos,0)/ps.length;S.x=cl(S.x+(avg-S.x)*.08,-2,2);return `Negociação de cargos com ${GRPN[a]}. Apoio maior, e sua linha se aproxima um pouco do grupo.`}
  if(k==='reg'){S.ap--;regOf(S,a).forEach(u=>{S.st[u.uf].rel=cl(S.st[u.uf].rel+8)});return `Agenda com governadores do ${RG[a]}: relação +8.`}
  if(k==='gov'){S.ap--;S.st[a].rel=cl(S.st[a].rel+14);return `Reunião com o governador de ${UFI[a].nome}: relação +14.`}
  if(k==='discurso'){S.ap--;applyFx(S,{mood:{all:2.5}});return 'Pronunciamento em rede nacional: aprovação +2,5 em todos os estados.'}
@@ -405,11 +431,23 @@ function election(S,strat){
   let v=shareOf(S,u,a);if(strat==='ent')v+=3;if(strat==='mod')v+=1;if(strat==='base')v+=Math.abs(S.x-u.lean)<1?4:-2;
   v=cl(v+(Math.random()-.5)*5,5,95);sh[u.uf]=v;tot+=v*g.pop});
  const nat=tot/popSum(S);return{sh,nat,win:nat>50}}
-function reelect(S){const mood=(natAppr(S)-45)/45,w=BL.map(b=>Math.max(.15,1+.4*mood*(1-Math.abs(S.x-b.pos)/3.2)+(Math.random()-.5)*.25));
- const dist=(tot,key)=>{const raw=BL.map((b,i)=>b[key]*w[i]),sum=raw.reduce((a,v)=>a+v,0),out=raw.map(v=>Math.round(v/sum*tot));out[2]+=tot-out.reduce((a,v)=>a+v,0);return out};
- const cd=dist(513,'cd'),sn=dist(81,'sn');BL.forEach((b,i)=>{S.seats[b.id]={cd:cd[i],sn:sn[i]}});
- UF.forEach(u=>{const g=S.st[u.uf];g.gx=cl(u.lean+(Math.random()-.5)*1.4,-2,2);const tr=SEC.reduce((a,s)=>a+s.w*g.m[s.id],0);g.rel=relTarget(S,g,tr)});
+const distr=(tot,raw)=>{const sum=raw.reduce((a,v)=>a+v,0),out=raw.map(v=>Math.round(v/sum*tot)),k=out.indexOf(Math.max(...out));out[k]+=tot-out.reduce((a,v)=>a+v,0);return out};
+function reelect(S){const mood=(natAppr(S)-45)/45,w=BL.map(b=>Math.max(.15,1+(.4+(b.id===S.party?.35:0))*mood*(1-Math.abs(S.x-b.pos)/3.2)+(Math.random()-.5)*.25));
+ const cd=distr(513,BL.map((b,i)=>(.5*b.cd+.5*S.seats[b.id].cd)*w[i]));
+ const nren=((S.ano-2030)/4)%2===0?27:54,keep=distr(81-nren,BL.map(b=>S.seats[b.id].sn+.001)),nw=distr(nren,BL.map((b,i)=>(.5*b.sn+.5*S.seats[b.id].sn)*w[i]));
+ BL.forEach((b,i)=>{S.seats[b.id]={cd:cd[i],sn:keep[i]+nw[i]}});S.snRen=nren;
+ UF.forEach(u=>{const g=S.st[u.uf];g.gx=cl(u.lean+(Math.random()-.5)*1.4,-2,2);const tr=SEC.reduce((a,q)=>a+q.w*g.m[q.id],0);g.rel=relTarget(S,g,tr)});
  BL.forEach(b=>{S.bl[b.id].b=0})}
+function munElection(S){const mood=(natAppr(S)-45)/45,w=BL.map(b=>S.seats[b.id].cd*Math.max(.2,1+(.4+(b.id===S.party?.3:0))*mood*(1-Math.abs(S.x-b.pos)/3.2)+(Math.random()-.5)*.3));
+ const pr=distr(5570,w),rows=BL.map((b,i)=>({id:b.id,sig:b.sig,n:b.n,pref:pr[i],seat:S.seats[b.id].cd}));
+ rows.forEach(r=>{const d=r.pref/5570-r.seat/513;r.d=d;bonus(S,r.id,cl(d*100*.7,-7,7))});
+ const own=rows.find(r=>r.id===S.party),m=cl(own.d*100*.6,-3,3);applyFx(S,{mood:{all:m}});
+ return{rows:rows.sort((a,b)=>b.pref-a.pref),own,mood:m}}
+function popSup(S,l){return cl(natAppr(S)+(l.pop||0),0,100)}
+function lawAftermath(S,l){if(!l.bold)return '';const ps=popSup(S,l);
+ if(ps<50){const m=Math.min(14,(50-ps)*.5);applyFx(S,{mood:{all:-m},bloc:{own:-6}});S.protest=l.t;return `Ampla rejeição popular (apoio de ${ps.toFixed(0)}%): a aprovação cai ${m.toFixed(1).replace('.',',')} pontos em todos os estados e há protestos.`}
+ if(ps>=60){applyFx(S,{mood:{all:3}});return 'Forte apoio popular: a aprovação sobe 3 pontos.'}
+ return 'Recepção popular neutra.'}
 function legacy(S){const pt=popSum(S),yrs=Math.max(.25,(S.hist.length-1)/4),pc=gdp(S)/pt,cagr=Math.pow(pc/S.pc0,1/yrs)-1;
  const pcs=UF.map(u=>S.st[u.uf].pib/S.st[u.uf].pop),spread=Math.max(...pcs)/Math.min(...pcs),dr=S.debt/gdp(S)*100,av=k=>avgIdx(S,k),stock=(av('edu')+av('tech')+av('infra')+av('saude'))/4;
  const s1=cl(cagr/.055*100),s2=cl((stock-40)*2),s3=cl((115-dr)/70*100),s4=cl((8-spread)/5*100),s5=cl((20-(S.infl+S.unem))/11*100),s6=cl(S.rt);
@@ -475,6 +513,7 @@ function startTurn(S){S.ap=3;genPauta(S);if(S.reg){S.reg.left--;if(S.reg.left<=0
  let notice=null;if(!S.reg&&S.hist.length>2&&Math.random()<.09*[.6,1,1.4][S.diff==null?1:S.diff]){const r=REGS[Math.floor(Math.random()*REGS.length)];S.reg={...r,left:10+Math.floor(Math.random()*13)};notice={id:'reg-'+r.id,tag:'Cenário externo',t:r.n,d:r.d+` O ciclo deve durar cerca de ${Math.round(S.reg.left/4)} anos.`,o:[{t:'Entendido',h:'O efeito aparece no crescimento, nos juros e na confiança. Ajuste sua estratégia.',e:{}}]}}
 for(const k in S.cd)S.cd[k]=Math.max(0,S.cd[k]-1);
  const q=[];if(S.hist.length>2)TRIG.forEach(tr=>{if(!(S.cd[tr.id]>0)&&q.length<2&&tr.when(S)){S.cd[tr.id]=tr.cool;q.push(tr.build(S))}});
+ if(S.protest){q.unshift({id:'prot',tag:'Reação popular',t:'Protestos contra '+S.protest,d:'Manifestações tomam as ruas contra a lei aprovada sem apoio popular.',o:[{t:'Manter a lei',h:'Mantém a política e o desgaste.',e:{mood:{all:-2}}},{t:'Abrir diálogo e compensar',h:'R$ 6 bi em compensações, reduz o desgaste.',e:{cost:6,mood:{all:1}}},{t:'Recuar parcialmente',h:'Perde credibilidade e acalma as ruas.',e:{rat:-1,mood:{all:2}}}]});S.protest=null}
  if(notice)q.unshift(notice);q.push(pickEvent(S).id);S.queue=q}
 
 EV.push(
@@ -560,9 +599,23 @@ const SCEN=[
 {id:'inflacao',n:'Inflação alta',d:'Os preços corroem a renda e o Banco Central já subiu os juros.',fx:S=>{S.infl=8;S.rt=38;S.unem=6.8}},
 {id:'exporta',n:'Boom de exportações',d:'Preços de commodities em alta e investidores otimistas. O país tem folga para decidir.',fx:S=>{S.reg={...REGS[0],left:14};S.I=16.5}},
 {id:'recessao',n:'Recessão herdada',d:'A economia vem de dois anos de queda. Desemprego alto e empresas sem investir.',fx:S=>{S.unem=10;S.I=12.5;UF.forEach(u=>{S.st[u.uf].mood-=6})}},
-{id:'hostil',n:'Congresso hostil',d:'Sua base é pequena. Cada projeto exigirá negociação.',fx:S=>{const o=ownBloc(S),op=S.x<0?'D':'E';S.seats[o].cd-=45;S.seats[op].cd+=45;S.seats[o].sn-=5;S.seats[op].sn+=5}},
+{id:'hostil',n:'Congresso hostil',d:'Sua base é pequena. Cada projeto exigirá negociação.',fx:S=>{const o=S.party,t=S.party==='PLB'?'PT':S.x<0?'PLB':'PT',m=Math.min(45,Math.floor(S.seats[o].cd*.5)),n=Math.min(5,Math.floor(S.seats[o].sn*.5));S.seats[o].cd-=m;S.seats[t].cd+=m;S.seats[o].sn-=n;S.seats[t].sn+=n}},
 {id:'infrad',n:'Infraestrutura deteriorada',d:'Estradas, portos e energia sofrem anos de abandono. O crescimento é limitado por gargalos logísticos.',fx:S=>{UF.forEach(u=>{S.st[u.uf].idx.infra=cl(S.st[u.uf].idx.infra-10);S.st[u.uf].i0.infra=S.st[u.uf].idx.infra})}}];
-function newGame(x,diff){const S=newState(x);S.diff=diff;const sc=SCEN[Math.floor(Math.random()*SCEN.length)];sc.fx(S);S.scen=sc.id;
+
+LAWS.push(
+{id:'bol_edu',bold:1,pop:6,t:'Revolução educacional',tipo:'PEC',b:-.9,d:'Escola em tempo integral, carreira docente nacional e metas de alfabetização.',h:'+2 pontos de educação ao ano; custa 0,8% do PIB ao ano',fx:{idx:{edu:2},mand:.008}},
+{id:'bol_infra',bold:1,pop:8,t:'Plano nacional de infraestrutura',tipo:'PEC',b:.5,d:'Programa de obras e concessões em rodovias, ferrovias, portos e energia.',h:'+2 pontos de infraestrutura ao ano, +1,5 p.p. de investimento privado e +0,3 p.p. de crescimento; custa 0,6% do PIB',fx:{idx:{infra:2},inv:1.5,gn:.003,mand:.006}},
+{id:'bol_priv',bold:1,pop:-10,t:'Privatização ampla de estatais',tipo:'PEC',b:1.5,d:'Venda de grandes estatais de energia, petróleo, bancos e logística.',h:'Receita única de R$ 250 bi, +0,5 p.p. de crescimento, +1,5 p.p. de investimento privado e nota de crédito +6; forte rejeição no Nordeste e no Norte',fx:{once:-250,gn:.005,inv:1.5,rat:6,mood:{NE:-6,N:-3}}},
+{id:'bol_trib',bold:1,pop:-4,t:'Reforma tributária radical (imposto único)',tipo:'PEC',b:.9,d:'Substitui dezenas de tributos por um imposto único sobre o consumo.',h:'+0,8 p.p. de crescimento ao ano e +2 p.p. de investimento privado; receita −0,6% do PIB',fx:{rev:-.006,gn:.008,inv:2}},
+{id:'bol_renda',bold:1,pop:12,t:'Renda básica universal ampla',tipo:'PEC',b:-1.7,d:'Transferência mensal a todos os adultos de baixa renda, financiada pelo orçamento.',h:'+2,5 pontos de assistência social ao ano, aprovação +4 na hora; custa 1,5% do PIB, inflação +0,4 p.p. e nota de crédito −6',fx:{mand:.015,idx:{social:2.5},infl:.4,rat:-6,mood:{all:4}}},
+{id:'bol_estado',bold:1,pop:-8,t:'Reforma do Estado',tipo:'PEC',b:1,d:'Reduz cargos, adota meritocracia e extingue órgãos duplicados.',h:'Economiza 1% do PIB ao ano, nota de crédito +6 e +0,2 p.p. de crescimento; forte desgaste no Distrito Federal',fx:{mand:-.010,rat:6,gn:.002,mood:{DF:-15,all:-2}}},
+{id:'bol_prev',bold:1,pop:-14,t:'Previdência por capitalização',tipo:'PEC',b:1.6,d:'Troca o sistema de repartição por contas individuais de aposentadoria.',h:'Economiza 1,2% do PIB ao ano, nota de crédito +8 e +1 p.p. de investimento privado; enorme desgaste popular',fx:{mand:-.012,rat:8,inv:1,mood:{all:-4}}},
+{id:'bol_verde',bold:1,pop:2,t:'Pacto verde e transição energética',tipo:'PEC',b:-1,d:'Metas de baixo carbono, energias renováveis e bioeconomia.',h:'Meio ambiente +2 e infraestrutura +0,8 ao ano, +0,8 p.p. de investimento privado; custa 0,4% do PIB e o Centro-Oeste cresce menos',fx:{idx:{amb:2,infra:.8},inv:.8,mand:.004,regG:{CO:-.003}}},
+{id:'bol_seg',bold:1,pop:4,t:'Reforma da segurança pública',tipo:'PEC',b:.8,d:'Integra as polícias, cria inteligência nacional e reforma o sistema prisional.',h:'+2,5 pontos de segurança ao ano e +0,6 p.p. de investimento privado; custa 0,4% do PIB',fx:{idx:{seg:2.5},inv:.6,mand:.004,mood:{S:2,CO:2,SE:2}}},
+{id:'bol_saude',bold:1,pop:8,t:'SUS universal reformado',tipo:'PEC',b:-.8,d:'Reestrutura a rede, amplia a atenção primária e a regulação de leitos.',h:'+2,5 pontos de saúde ao ano; custa 0,8% do PIB',fx:{idx:{saude:2.5},mand:.008}},
+{id:'bol_fed',bold:1,pop:2,t:'Novo pacto federativo',tipo:'PEC',b:0,d:'Redistribui receitas e competências entre União, estados e municípios.',h:'Relação com governadores +15, +0,3 p.p. de crescimento e nota +2; custa 0,3% do PIB',fx:{rel:15,gn:.003,mand:.003,rat:2}});
+LAWS.forEach(l=>{LAW[l.id]=l});
+function newGame(x,diff,party){const S=newState(x);S.diff=diff;S.party=party||'PT';const sc=SCEN[Math.floor(Math.random()*SCEN.length)];sc.fx(S);S.scen=sc.id;
  UF.forEach(u=>{S.st[u.uf].appr=approval(S,u)});S.nb=Object.fromEntries(SEC.map(z=>[z.id,avgIdx(S,z.id)]));S.hist=[hrow(S,'T4/2026',2.5,S.debt/gdp(S)*100)];
  S.notice={id:'scen-'+sc.id,tag:'Cenário inicial',t:sc.n,d:sc.d,o:[{t:'Começar',h:'Dificuldade: '+['tranquila','normal','dura'][diff==null?1:diff]+'.',e:{}}]};return S}
 // CORE-END
@@ -658,22 +711,22 @@ function seatsPos(total,rows,rIn,rOut,cx,cy){const rs=[];for(let j=0;j<rows;j++)
  pts.sort((a,b)=>b.th-a.th||a.r-b.r);return pts}
 function hemiSvg(key,total,rows,rIn,rOut,cx,cy,rad,vw,vh,label){
  const law=S.selLaw?LAW[S.selLaw]:null,P=law?BL.map((b,i)=>pYes(S,law,i)):null,pts=seatsPos(total,rows,rIn,rOut,cx,cy);let k=0,out='';
- BL.forEach((b,i)=>{const nseat=S.seats[b.id][key];for(let a=0;a<nseat&&k<pts.length;a++,k++){const p=pts[k];out+=`<circle data-b="${b.id}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rad}" fill="var(${b.c})" opacity="${P?(.22+.78*P[i]).toFixed(2):.92}"/>`}});
+ BL.forEach((b,i)=>{const nseat=S.seats[b.id][key];for(let a=0;a<nseat&&k<pts.length;a++,k++){const p=pts[k];out+=`<circle data-b="${b.id}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rad}" fill="${b.col}" opacity="${P?(.22+.78*P[i]).toFixed(2):.92}"/>`}});
  let ctr='';if(law){const pr=proj(S,law),y=key==='cd'?pr.c:pr.s,nd=key==='cd'?pr.n.c:pr.n.s;ctr=`<text x="${cx}" y="${cy-8}" text-anchor="middle" style="font:500 15px var(--mono);fill:var(--ink)">${Math.round(y)}</text><text x="${cx}" y="${cy+6}" text-anchor="middle" style="font:500 10px var(--mono);fill:var(--muted)">de ${nd} necessários</text>`}
  return `<p class="sub" style="margin-top:4px">${label}</p><svg class="hemi" viewBox="0 0 ${vw} ${vh}" role="img" aria-label="${label}">${out}${ctr}</svg>`}
 function renderHemi(){const law=S.selLaw?LAW[S.selLaw]:null;
  $('#hemiSub').textContent=law?`projeção: ${law.t}`:'composição atual';
  $('#hemis').innerHTML=hemiSvg('cd',513,9,62,142,150,152,3.5,300,160,'Câmara dos Deputados (513)')+hemiSvg('sn',81,3,44,92,100,102,5.2,200,108,'Senado Federal (81)');
- $('#hleg').innerHTML=BL.map((b,i)=>`<span><i style="background:var(${b.c})"></i>${b.n} ${S.seats[b.id].cd} · ${S.seats[b.id].sn}</span>`).join('')}
+ $('#hleg').innerHTML=BL.map((b,i)=>`<span><i style="background:${b.col}"></i>${b.sig} ${S.seats[b.id].cd} · ${S.seats[b.id].sn}</span>`).join('')}
 function hemiHover(e){const c=e.target.closest&&e.target.closest('circle[data-b]');if(!c){hideTip();return}
  const i=BL.findIndex(b=>b.id===c.dataset.b),b=BL[i],law=S.selLaw?LAW[S.selLaw]:null;
- showTip(`<b>${b.n}</b><br>Câmara ${S.seats[b.id].cd} · Senado ${S.seats[b.id].sn}<br>Apoio ao governo: ${fm(blocS(S,i),0)}%`+(law?`<br>Votaria sim: ${fm(pYes(S,law,i)*100,0)}%`:''),e.clientX,e.clientY)}
+ showTip(`<b>${b.n}${b.id===S.party?' (seu partido)':''}</b><br>Câmara ${S.seats[b.id].cd} · Senado ${S.seats[b.id].sn}<br>Apoio ao governo: ${fm(blocS(S,i),0)}%`+(law?`<br>Votaria sim: ${fm(pYes(S,law,i)*100,0)}%`:''),e.clientX,e.clientY)}
 function mapHover(e){const g=e.target.closest&&e.target.closest('[data-hv],.tl');if(!g){hideTip();return}
  const uf=g.dataset.hv||g.dataset.r,u=UFI[uf],st=S.st[uf],m=curM(),a=st.appr,r=rejOf(S,u,a);
  showTip(`<b>${u.nome}</b><br>${m.n}: ${m.fmt(m.f(u,st))}<br>Aprova ${fm(a,0)}% · Rejeita ${fm(r,0)}%`,e.clientX,e.clientY)}
 // UI-1-END
 // UI-2
-const KEY='simpol-v3',BEST='simpol-v3-best',NQ=(END-2027+1)*4;
+const KEY='simpol-v4',BEST='simpol-v3-best',NQ=(END-2027+1)*4;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const loadSave=()=>{try{const t=localStorage.getItem(KEY);return t?JSON.parse(t):null}catch(e){return null}};
 const wipe=()=>{try{localStorage.removeItem(KEY)}catch(e){}};
@@ -687,9 +740,9 @@ function spark(key,c){const H=S.hist.slice(-24);if(H.length<2)return '';const v=
  return `<svg viewBox="0 0 100 20" preserveAspectRatio="none"><polyline fill="none" stroke="${c}" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${v.map((x,i)=>(i/(v.length-1)*100).toFixed(1)+','+(18-(x-lo)/r*16).toFixed(1)).join(' ')}"/></svg>`}
 function kpi(k,label,val,small,c,key){const col=c==='good'?'var(--good)':c==='bad'?'var(--bad)':c==='warn'?'var(--warn)':'var(--cyan)';
  return `<button class="k ${c}" data-act="info" data-k="${k}"><span>${label}<i>i</i></span><b>${val}</b><small>${small}</small>${spark(key,col)}</button>`}
-function renderHead(){const nx=ELECT.find(y=>y>=S.ano);
- $('#eyebrow').textContent=`Brasil · ${lbl()} · mandato ${S.mandato} de 7 · ${nx?'eleição em '+nx:'último mandato'}`;
- $('#lineSub').textContent=`Linha: ${ideoName(S.x)}${S.reg?' · '+S.reg.n:''}${S.risk>0?' · risco de impeachment '+S.risk+'/4':''}`;
+function renderHead(){const ev=[...ELECT.map(y=>[y,'geral']),...MUN.map(y=>[y,'municipal'])].filter(e=>e[0]>=S.ano).sort((a,b)=>a[0]-b[0])[0];
+ $('#eyebrow').textContent=`Brasil · ${lbl()} · mandato ${S.mandato} de 7 · ${ev?'próxima eleição: '+ev[1]+' '+ev[0]:'último mandato'}`;
+ $('#lineSub').textContent=`${BLI[S.party].sig} · ${ideoName(S.x)}${S.reg?' · '+S.reg.n:''}${S.risk>0?' · risco de impeachment '+S.risk+'/4':''}`;
  $('#btnEnd').textContent=`Encerrar ${lbl()}`;$('#score').textContent=legacy(S).score}
 function renderKpis(){const gd=gdp(S),h=S.hist[S.hist.length-1],dr=S.debt/gd*100,ap=natAppr(S),pc=gd/popSum(S),F=fiscal(S);
  $('#kpis').innerHTML=
@@ -714,7 +767,7 @@ function renderState(){const u=UFI[sel],g=S.st[sel],gd=gdp(S),pcN=gd/popSum(S),p
  <div><span>PIB</span><b>R$ ${fm(g.pib,0)} bi</b><small>${fm(g.pib/gd*100)}% do país</small></div>
  <div><span>PIB per capita</span><b>R$ ${fm(pc,1)} mil</b><small>${fm(pc/pcN,2)}× a média</small></div>
  <div><span>Crescimento</span><b>${sg(g.g*100)}%</b><small>anualizado</small></div>
- <div><span>Governador</span><b>${ideoName(g.gx)}</b><small class="${gcl}">relação ${fm(g.rel,0)}/100 · execução ${fm((.9+.2*g.rel/100)*100,0)}%</small></div></div>
+ <div><span>Governador</span><b>${BL.reduce((a,b)=>Math.abs(g.gx-b.pos)<Math.abs(g.gx-a.pos)?b:a).sig}</b><small class="${gcl}">relação ${fm(g.rel,0)}/100 · execução ${fm((.9+.2*g.rel/100)*100,0)}%</small></div></div>
  <div class="acts"><button class="btn" data-act="act" data-k="gov" data-a="${sel}" ${S.ap<1?'disabled':''}>Reunião com o governador<small>1 ponto · relação +14</small></button><button class="btn" data-act="act" data-k="reg" data-a="${u.reg}" ${S.ap<1?'disabled':''}>Agenda com o ${RG[u.reg]}<small>1 ponto · relação +8 na região</small></button></div>
  <div class="cardhead"><h3>Aportes do estado</h3><div class="ctl"><button data-act="adjAll" data-r="${sel}" data-d="-.05" aria-label="Reduzir todas as áreas">−</button><output>todas as áreas</output><button data-act="adjAll" data-r="${sel}" data-d=".05" aria-label="Aumentar todas as áreas">+</button></div></div>
  ${L.cap<2?`<p class="warnbox">Arcabouço fiscal em vigor: aportes limitados a ${fm(L.cap*100,0)}% da base.</p>`:''}
@@ -722,13 +775,22 @@ function renderState(){const u=UFI[sel],g=S.st[sel],gd=gdp(S),pcN=gd/popSum(S),p
 function billHTML(id){const l=LAW[id],pr=proj(S,l),n=pr.n,on=S.sent.includes(id),ok=pr.c>=n.c&&pr.s>=n.s,close=pr.c>=n.c*.93&&pr.s>=n.s*.93;
  const st=ok?['good','Maioria provável']:close?['warn','Disputa apertada']:['bad','Votos insuficientes'];
  const bar=(v,nd,t)=>`<div class="pj"><span>${t}</span><div class="t"><i style="width:${cl(v/(t==='Câmara'?513:81)*100).toFixed(0)}%"></i><u style="left:${(nd/(t==='Câmara'?513:81)*100).toFixed(1)}%"></u></div><b>${Math.round(v)}/${nd}</b></div>`;
- return `<div class="bill ${S.selLaw===id?'on':''}" data-act="lawsel" data-id="${id}"><div class="tags"><span class="pill">${l.tipo}</span><span class="pill">${ideoName(l.b)}</span><span class="pill ${st[0]}">${st[1]}</span></div><h4>${l.t}</h4><p>${l.d}</p><p class="hint"><b>Efeito:</b> ${l.h}</p>${bar(pr.c,n.c,'Câmara')}${bar(pr.s,n.s,'Senado')}
+ const ps=popSup(S,l),pb=l.bold?`<div class="pj"><span>Popular</span><div class="t"><i style="width:${ps.toFixed(0)}%;background:${ps<50?'var(--bad)':'var(--good)'}"></i><u style="left:50%"></u></div><b>${fm(ps,0)}%</b></div><p class="sub">${ps<50?'Se aprovada agora, provoca ampla rejeição popular e protestos.':'Apoio popular suficiente para aprovar sem desgaste.'}</p>`:'';
+ return `<div class="bill ${S.selLaw===id?'on':''}" data-act="lawsel" data-id="${id}"><div class="tags"><span class="pill">${l.tipo}</span>${l.bold?'<span class="pill warn">Ousada · exige 3/5</span>':''}<span class="pill">${ideoName(l.b)}</span><span class="pill ${st[0]}">${st[1]}</span></div><h4>${l.t}</h4><p>${l.d}</p><p class="hint"><b>Efeito:</b> ${l.h}</p>${bar(pr.c,n.c,'Câmara')}${bar(pr.s,n.s,'Senado')}${pb}
  <div style="margin-top:8px"><button class="btn ${on?'primary':''}" data-act="send" data-id="${id}">${on?'Enviado para votação (clique para retirar)':'Enviar para votação neste trimestre'}</button></div></div>`}
+let lawFilter='disp',tabView='gov';
+function renderLeis(){const avail=LAWS.filter(l=>!S.laws.includes(l.id)&&(!l.only||(S.x>=l.only[0]&&S.x<=l.only[1])));
+ const F=[['disp','Todas disponíveis',avail.length],['bold','Ousadas',avail.filter(l=>l.bold).length],['ord','Comuns',avail.filter(l=>!l.bold).length],['vig','Em vigor',S.laws.length]];
+ const ids=lawFilter==='vig'?S.laws:avail.filter(l=>lawFilter==='bold'?l.bold:lawFilter==='ord'?!l.bold:true).map(l=>l.id);
+ $('#leisSub').textContent=`${S.sent.length} de 2 enviados neste trimestre · ${S.ap} pontos de articulação (use o painel Governo para negociar)`;
+ $('#leisChips').innerHTML=F.map(f=>`<button class="chip" data-act="lfilter" data-k="${f[0]}" aria-pressed="${f[0]===lawFilter}">${f[1]} (${f[2]})</button>`).join('');
+ $('#leisList').innerHTML=ids.length?ids.map(id=>lawFilter==='vig'?`<div class="bill"><div class="tags"><span class="pill good">Em vigor</span>${LAW[id].bold?'<span class="pill warn">Ousada</span>':''}</div><h4>${LAW[id].t}</h4><p class="hint"><b>Efeito:</b> ${LAW[id].h}</p></div>`:billHTML(id)).join(''):'<p class="sub">Nenhum projeto nesta lista.</p>'}
+function setTab(k){tabView=k;$('#tab-gov').hidden=k!=='gov';$('#tab-leis').hidden=k!=='leis';document.querySelectorAll('[data-act=tab]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));if(k==='leis')renderLeis()}
 function renderPauta(){$('#pautaSub').textContent=`${S.sent.length} de 2 enviados · ${S.laws.length} leis em vigor`;
  $('#pauta').innerHTML=S.pauta.length?S.pauta.map(billHTML).join(''):'<p class="sub">Todas as propostas disponíveis já foram aprovadas.</p>'}
 function renderActs(){const d=S.ap<1?'disabled':'';
  $('#apBar').innerHTML=`<span>Pontos de articulação</span>`+[0,1,2].map(i=>`<i class="${i<S.ap?'on':''}"></i>`).join('')+`<span>${S.ap}/3</span>`;
- $('#acts').innerHTML=`<button class="btn" data-act="act" data-k="emenda" ${d}>Liberar emendas<small>R$ 8 bi · Centrão +12, vizinhos +5</small></button><button class="btn" data-act="act" data-k="discurso" ${d}>Pronunciamento nacional<small>aprovação +2,5 em todo o país</small></button>`+BL.map(b=>`<button class="btn" data-act="act" data-k="cargos" data-a="${b.id}" ${d}>Cargos: ${b.n}<small>apoio +14 e linha se aproxima</small></button>`).join('')}
+ $('#acts').innerHTML=`<button class="btn" data-act="act" data-k="emenda" ${d}>Liberar emendas<small>R$ 8 bi · Centrão +12, vizinhos +5</small></button><button class="btn" data-act="act" data-k="discurso" ${d}>Pronunciamento nacional<small>aprovação +2,5 em todo o país</small></button>`+Object.keys(GRP).map(k=>`<button class="btn" data-act="act" data-k="cargos" data-a="${k}" ${d}>Cargos: ${GRPN[k]}<small>${GRP[k].map(i=>BLI[i].sig).join(', ')} · apoio +14</small></button>`).join('')}
 function renderBudget(){const F=fiscal(S);$('#taxOut').textContent=fm((S.tax+F.L.rev)*100)+'% do PIB';
  const Ln=(a,b,c)=>`<dt class="${c||''}">${a}</dt><dd class="${c||''}">${b}</dd>`;
  $('#fiscal').innerHTML=Ln('Receita federal (ano)',`R$ ${fm(F.rev,0)} bi`)+Ln('Despesas obrigatórias',`− R$ ${fm(F.mand,0)} bi`)+Ln('Aportes nas áreas',`− R$ ${fm(F.disc,0)} bi`)+(S.pend.cost?Ln('Decisões do trimestre (pontual)',`${S.pend.cost>0?'−':'+'} R$ ${fm(Math.abs(S.pend.cost),0)} bi`):'')+Ln('Resultado primário',`${F.prim>=0?'+':'−'} R$ ${fm(Math.abs(F.prim),0)} bi`,F.prim>=0?'good':'')+Ln('Juros da dívida',`− R$ ${fm(F.intr,0)} bi`)+Ln('Déficit nominal',`${fm(F.defPct)}% do PIB`,F.defPct>4?'bad':F.defPct<=1?'good':'');
@@ -737,20 +799,20 @@ function renderBudget(){const F=fiscal(S);$('#taxOut').textContent=fm((S.tax+F.L
   return `<div class="srow"><div class="top"><button class="sname" data-act="sinfo" data-k="${s.id}">${s.nome}</button><div class="ctl"><button data-act="nat" data-s="${s.id}" data-d="-.05" aria-label="Reduzir ${s.nome} em todos os estados">−</button><output>R$ ${fm(tot,0)} bi <em>${Math.abs(dp)<.05?'base':sg(dp,0)+'%'}</em></output><button data-act="nat" data-s="${s.id}" data-d=".05" aria-label="Aumentar ${s.nome} em todos os estados">+</button></div></div>
   <div class="bar"><div class="track"><i style="width:${avgIdx(S,s.id).toFixed(0)}%"></i></div><span>índice ${fm(avgIdx(S,s.id),0)}</span></div></div>`}).join('')}
 function renderFeed(){$('#feed').innerHTML=S.feed.slice(0,10).map(f=>`<li><time>${f.a}</time><span>${f.t}</span></li>`).join('')}
-function renderAll(){renderHead();renderKpis();renderMap();renderState();renderPauta();renderActs();renderHemi();renderBudget();drawHist();renderRank();renderFeed();$('#tax').value=S.tax*100}
+function renderAll(){if(tabView==='leis')renderLeis();renderHead();renderKpis();renderMap();renderState();renderPauta();renderActs();renderHemi();renderBudget();drawHist();renderRank();renderFeed();$('#tax').value=S.tax*100}
 function modal(html){$('#sheet').innerHTML=html;$('#modal').hidden=false;$('#modal').scrollTop=0;document.body.style.overflow='hidden'}
 function closeModal(){$('#modal').hidden=true;document.body.style.overflow=''}
 const closeBtn='<button class="btn primary" data-act="close" style="margin-top:12px">Fechar</button>';
 function infoModal(o,extra){modal(`<p class="eyebrow">Ajuda</p><h2>${o.t}</h2><p>${o.d}</p><p><b>Como funciona:</b> ${o.how}</p><div class="tipbox"><b>Dica:</b> ${o.tip(S)}</div>${extra||''}${closeBtn}`)}
-function showStart(){const sv=loadSave(),best=getBest(),opts=IDEO.map(i=>{const t=newState(i.x),sh=UF.map(u=>({u,v:shareOf(t,u,t.st[u.uf].appr)})).sort((a,b)=>b.v-a.v);
-  return `<button class="opt" data-act="start" data-k="${i.k}"><b>${i.n} · aprovação inicial ${fm(natAppr(t),0)}% · rejeição ${fm(natRej(t),0)}%</b><span>${i.d}</span><span>Mais forte: ${sh[0].u.nome} (${fm(sh[0].v,0)}%) · Mais fraco: ${sh[sh.length-1].u.nome} (${fm(sh[sh.length-1].v,0)}%)</span></button>`}).join('');
- modal(`<p class="eyebrow">Brasil · 2027 a 2054</p><h2>Escolha sua linha política</h2><p><b>Objetivo: enriquecer o país.</b> Você governa até 28 anos em trimestres, e sua nota final mede o crescimento do PIB per capita, o capital humano e a infraestrutura, a saúde fiscal, a redução da desigualdade regional, a estabilidade e a nota de crédito. A popularidade é só o meio: sem ela você perde a eleição e o jogo termina. Você pode também renunciar ou não disputar a reeleição. O cenário inicial é sorteado e cada linha política tem leis e eventos próprios.${best?`</p><p class="sub">Melhor nota: ${best}/100.`:''}</p><div class="chips" style="margin:8px 0"><span class="sub" style="align-self:center">Dificuldade:</span>${['Tranquila','Normal','Dura'].map((n,i)=>`<button class="chip" data-act="diff" data-d="${i}" aria-pressed="${i===startDiff}">${n}</button>`).join('')}</div>${sv?`<button class="btn primary" data-act="cont" style="margin:8px 0">Continuar jogo salvo (${sv.q?`T${sv.q}/${sv.ano}`:''})</button>`:''}${opts}`)}
+function showStart(){const sv=loadSave(),best=getBest(),opts=IDEO.map(i=>{const t=newState(i.x),sh=UF.map(u=>({u,v:shareOf(t,u,t.st[u.uf].appr)})).sort((a,b)=>b.v-a.v),bb=BLI[i.k];
+  return `<button class="opt" data-act="start" data-k="${i.k}"><b>${i.n} (${i.sig}) · ${ideoName(i.x)} · ${bb.cd} deputados e ${bb.sn} senadores</b><span>Aprovação inicial ${fm(natAppr(t),0)}% · rejeição ${fm(natRej(t),0)}%</span><span>${i.d}</span><span>Mais forte: ${sh[0].u.nome} (${fm(sh[0].v,0)}%) · Mais fraco: ${sh[sh.length-1].u.nome} (${fm(sh[sh.length-1].v,0)}%)</span></button>`}).join('');
+ modal(`<p class="eyebrow">Brasil · 2027 a 2054</p><h2>Escolha seu partido</h2><p><b>Objetivo: enriquecer o país.</b> Você governa até 28 anos em trimestres, e sua nota final mede o crescimento do PIB per capita, o capital humano e a infraestrutura, a saúde fiscal, a redução da desigualdade regional, a estabilidade e a nota de crédito. A popularidade é só o meio: sem ela você perde a eleição e o jogo termina. Há eleições gerais a cada 4 anos (com renovação da Câmara e de parte do Senado) e municipais no meio do mandato. Você pode renunciar ou não disputar a reeleição. O cenário inicial é sorteado, e cada linha política tem leis e eventos próprios.${best?`</p><p class="sub">Melhor nota: ${best}/100.`:''}</p><div class="chips" style="margin:8px 0"><span class="sub" style="align-self:center">Dificuldade:</span>${['Tranquila','Normal','Dura'].map((n,i)=>`<button class="chip" data-act="diff" data-d="${i}" aria-pressed="${i===startDiff}">${n}</button>`).join('')}</div>${sv?`<button class="btn primary" data-act="cont" style="margin:8px 0">Continuar jogo salvo (${sv.q?`T${sv.q}/${sv.ano}`:''})</button>`:''}${opts}`)}
 function flow(){if(S.queue&&S.queue.length){const e0=S.queue.shift(),e=typeof e0==='string'?EVm[e0]:e0;S.cur=e;const n=S.qn||1,i=n-S.queue.length;
   modal(`<p class="eyebrow">Decisão ${i} de ${n} · ${lbl()}</p>${e.tag?`<span class="tag ${/positivo/.test(e.tag)?'pos':''}">${e.tag}</span>`:''}<h2>${e.t}</h2><p>${e.d}</p>`+e.o.map((o,j)=>`<button class="opt" data-act="ev" data-i="${j}"><b>${o.t}</b><span>${o.h}</span></button>`).join(''));return}
  S.cur=null;closeModal();renderAll();save()}
 function endTurn(){const L=lbl(),ap0=natAppr(S),lines=[];
  S.sent.forEach(id=>{const law=LAW[id],v=vote(S,law);
-  if(v.pass){passLaw(S,id);S.pauta=S.pauta.filter(x=>x!==id);lines.push(`<li><b>${law.t}</b> aprovada. Câmara ${v.c}/${v.n.c}, Senado ${v.s}/${v.n.s}.</li>`);S.feed.unshift({a:L,t:`Lei aprovada: ${law.t}.`})}
+  if(v.pass){const af=lawAftermath(S,law);passLaw(S,id);S.pauta=S.pauta.filter(x=>x!==id);lines.push(`<li><b>${law.t}</b> aprovada. Câmara ${v.c}/${v.n.c}, Senado ${v.s}/${v.n.s}.${af?' '+af:''}</li>`);S.feed.unshift({a:L,t:`Lei aprovada: ${law.t}.`})}
   else{S.fails++;applyFx(S,{mood:{all:-1}});lines.push(`<li><b>${law.t}</b> rejeitada. Câmara ${v.c}/${v.n.c}, Senado ${v.s}/${v.n.s}.</li>`);S.feed.unshift({a:L,t:`Derrota no Congresso: ${law.t}.`})}});
  S.sent=[];const rep=simQuarter(S),dA=natAppr(S)-ap0,bn=UFI[rep.best].nome,wn=UFI[rep.worst].nome;
  S.feed.unshift({a:L,t:`PIB ${sg(rep.gN)}%, inflação ${fm(rep.infl)}%, aprovação ${fm(rep.appr,0)}% (${sg(dA)}).`});
@@ -772,7 +834,9 @@ function showResult(res){const rows=[...UF].sort((a,b)=>res.sh[b.uf]-res.sh[a.uf
  const won=UF.filter(u=>res.sh[u.uf]>50).length;
  const head=res.win?`Reeleito com ${fm(res.nat,1)}% dos votos`:`Derrota: ${fm(res.nat,1)}% dos votos`;
  const btn=res.win?'<button class="btn primary" data-act="next">Iniciar o próximo mandato</button>':'<button class="btn primary" data-act="lose">Ver resultado final</button>';
- modal(`<p class="eyebrow">Apuração · ${S.ano}</p><h2>${head}</h2><p>Você venceu em ${won} de 27 estados. Novo Congresso (Câmara): ${BL.map(b=>`${b.n} ${S.seats[b.id].cd}`).join(' · ')}.</p><div style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto;margin:8px 0">${rows}</div>${btn}`)}
+ modal(`<p class="eyebrow">Apuração · ${S.ano}</p><h2>${head}</h2><p>Você venceu em ${won} de 27 estados. Novo Congresso (Câmara, maiores bancadas): ${[...BL].sort((a,b)=>S.seats[b.id].cd-S.seats[a.id].cd).slice(0,6).map(b=>`${b.sig} ${S.seats[b.id].cd}`).join(' · ')}. Senado: ${S.snRen} das 81 cadeiras foram renovadas. Seu partido (${BLI[S.party].sig}) tem ${S.seats[S.party].cd} deputados e ${S.seats[S.party].sn} senadores.</p><div style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto;margin:8px 0">${rows}</div>${btn}`)}
+function munShow(){const r=munElection(S),o=r.own,tot=5570;renderAll();
+ modal(`<p class="eyebrow">Eleições municipais · ${S.ano}</p><h2>Resultado das prefeituras</h2><p>Foram disputadas ${tot.toLocaleString('pt-BR')} prefeituras. Seu partido (${BLI[S.party].sig}) elegeu ${o.pref.toLocaleString('pt-BR')} prefeitos, ${o.d>=0?'acima':'abaixo'} do que sua bancada na Câmara sugeria. ${r.mood>=0?'Isso reforça':'Isso enfraquece'} sua imagem (${sg(r.mood)} ponto na aprovação). Os partidos que cresceram nas cidades ganham força no Congresso nos próximos trimestres.</p><div style="display:flex;flex-direction:column;gap:4px;margin:8px 0">${r.rows.slice(0,8).map(x=>`<div class="vrow"><span>${x.sig}</span><div class="vtrack"><i style="width:${(x.pref/tot*100*3).toFixed(0)}%"></i></div><b>${x.pref}</b></div>`).join('')}</div><button class="btn primary" data-act="adv">Continuar</button>`)}
 function advance(){S.q++;if(S.q>4){S.q=1;S.ano++}startTurn(S);S.qn=S.queue.length;S.feed.unshift({a:lbl(),t:'Novo trimestre. Defina aportes, pauta e articulação.'});renderAll();flow()}
 const clickAdj=(m,s,d,cap)=>{m[s]=cl(+(m[s]+d).toFixed(2),.5,cap)};
 function menu(){modal(`<p class="eyebrow">Menu</p><h2>Opções</h2><p class="sub">Seu progresso é salvo automaticamente.</p><button class="opt" data-act="scoreinfo"><b>Ver nota projetada</b><span>Como a nota final é calculada.</span></button><button class="opt" data-act="resign"><b>Renunciar ao mandato</b><span>Encerra o jogo agora com a nota atual.</span></button><button class="opt" data-act="restart"><b>Novo jogo</b><span>Descarta o progresso atual.</span></button>${closeBtn}`)}
@@ -788,10 +852,13 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(
  else if(a==='send'){e.stopPropagation();const id=t.dataset.id;if(S.sent.includes(id))S.sent=S.sent.filter(x=>x!==id);else if(S.sent.length<2)S.sent.push(id);S.selLaw=id;renderPauta();renderHemi();save()}
  else if(a==='act'){$('#actMsg').textContent=act(S,t.dataset.k,t.dataset.a);renderKpis();renderPauta();renderHemi();renderActs();renderState();renderBudget();save()}
  else if(a==='end'){endTurn()}
- else if(a==='after'){if(S.ano===END&&S.q===4)finish('Mandato concluído',`Você governou até ${END}. Sua nota é calculada sobre o desempenho acumulado.`);else if(isElectionQ())campaign();else advance()}
+ else if(a==='after'){if(S.ano===END&&S.q===4)finish('Mandato concluído',`Você governou até ${END}. Sua nota é calculada sobre o desempenho acumulado.`);else if(isElectionQ())campaign();else if(MUN.includes(S.ano)&&S.q===4)munShow();else advance()}
+ else if(a==='adv'){advance()}
+ else if(a==='tab'){setTab(t.dataset.k)}
+ else if(a==='lfilter'){lawFilter=t.dataset.k;renderLeis()}
  else if(a==='restart'){showStart()}
  else if(a==='cont'){const sv=loadSave();if(sv){S=sv;renderAll();S.queue=S.queue||[];if(S.cur){S.queue.unshift(S.cur)}flow()}}
- else if(a==='start'){const x=IDEO.find(i=>i.k===t.dataset.k).x;S=newGame(x,startDiff);sel='SP';S.feed.unshift({a:'T1/2027',t:`Você assume o governo com linha ${ideoName(x).toLowerCase()}. Aprovação inicial de ${fm(natAppr(S),0)}%.`});startTurn(S);S.queue.unshift(S.notice);S.qn=S.queue.length;renderAll();flow()}
+ else if(a==='start'){const pty=IDEO.find(i=>i.k===t.dataset.k),x=pty.x;S=newGame(x,startDiff,pty.k);sel='SP';tabView='gov';$('#tab-gov').hidden=false;$('#tab-leis').hidden=true;S.feed.unshift({a:'T1/2027',t:`Você assume o governo pelo ${pty.n}, com linha ${ideoName(x).toLowerCase()}. Aprovação inicial de ${fm(natAppr(S),0)}%.`});startTurn(S);S.queue.unshift(S.notice);S.qn=S.queue.length;renderAll();flow()}
  else if(a==='diff'){startDiff=+t.dataset.d;showStart()}
  else if(a==='ev'){const e2=S.cur,o=e2.o[+t.dataset.i];applyFx(S,o.e);S.feed.unshift({a:lbl(),t:`${e2.t}: ${o.t}.`});flow()}
  else if(a==='camp'){const res=election(S,t.dataset.k);reelect(S);renderAll();showResult(res)}
@@ -810,7 +877,7 @@ $('#map').addEventListener('mousemove',mapHover);$('#map').addEventListener('mou
 $('#rank').addEventListener('mousemove',mapHover);$('#rank').addEventListener('mouseleave',hideTip);
 $('#hemis').addEventListener('mousemove',hemiHover);$('#hemis').addEventListener('mouseleave',hideTip);
 $('#hist').addEventListener('pointermove',histMove);$('#hist').addEventListener('pointerdown',histMove);$('#hist').addEventListener('pointerleave',histOut);
-buildMap();genPauta(S);reelect(S);renderAll();showStart();
+buildMap();genPauta(S);renderAll();showStart();
 
 </script>
 </body>

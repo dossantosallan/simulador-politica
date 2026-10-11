@@ -1266,13 +1266,13 @@ function closeModal(){$('#modal').hidden=true;document.body.style.overflow=''}
 const closeBtn='<button class="btn primary" data-act="close" style="margin-top:12px">Fechar</button>';
 function infoModal(o,extra){modal(`<p class="eyebrow">Ajuda</p><h2>${o.t}</h2><p>${o.d}</p><p><b>Como funciona:</b> ${o.how}</p><div class="tipbox"><b>Dica:</b> ${o.tip(S)}</div>${extra||''}${closeBtn}`)}
 const jget=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-function recordRun(sc){if(S.recorded)return{nw:[],pb:false};S.recorded=1;const A=jget('simpol-ach',{}),bp=jget('simpol-bp',{}),dl=jget('simpol-dl',{}),got=achEval(S,sc),nw=got.filter(id=>!A[id]);
+function recordRun(sc){if(S.recorded)return{nw:[],pb:false,bp:jget('simpol-bp',{})[S.party]};S.recorded=1;const A=jget('simpol-ach',{}),bp=jget('simpol-bp',{}),dl=jget('simpol-dl',{}),got=achEval(S,sc),nw=got.filter(id=>!A[id]);
  got.forEach(id=>{if(!A[id])A[id]={d:new Date().toISOString().slice(0,10),p:S.party,s:sc}});jset('simpol-ach',A);
  const pb=sc>(bp[S.party]||0);if(pb){bp[S.party]=sc;jset('simpol-bp',bp)}
  if(S.daily){const k=String(S.seed);if(sc>(dl[k]||0)){dl[k]=sc;jset('simpol-dl',dl)}}
  return{nw,pb,bp:bp[S.party],prev:pb}}
 function achHTML(r,sc){const A=jget('simpol-ach',{});let h='';if(r.nw.length)h+=`<div class="tipbox ach-new"><b>Conquistas desbloqueadas</b>${r.nw.map(id=>{const a=ACH.find(x=>x.id===id);return `<div class="ach on"><b>★ ${a.n}</b><span>${a.d}</span></div>`}).join('')}</div>`;
- h+=`<p class="sub">${BLI[S.party].sig}: ${r.pb?'novo recorde pessoal':'recorde pessoal '+(r.bp||sc)}/100${S.daily?' · desafio diário registrado':''} · conquistas: ${Object.keys(A).length}/${ACH.length}</p>`;return h}
+ h+=`<p class="sub">${BLI[S.party].sig}: ${r.pb?'novo recorde pessoal: ':'recorde pessoal '}${r.bp||sc}/100${S.daily?' · desafio diário registrado':''} · conquistas: ${Object.keys(A).length}/${ACH.length}</p>`;return h}
 function showAch(){const A=jget('simpol-ach',{}),bp=jget('simpol-bp',{}),dl=jget('simpol-dl',{}),n=Object.keys(A).length,dk=Object.keys(dl);
  modal(`<p class="eyebrow">Conquistas e placar local</p><h2>${n} de ${ACH.length} conquistas</h2><div class="achs">${ACH.map(a=>{const u=A[a.id];return `<div class="ach ${u?'on':''}"><b>${u?'★':'☆'} ${a.n}</b><span>${a.d}</span>${u?`<small>${u.d} · ${BLI[u.p]?BLI[u.p].sig:u.p} · nota ${u.s}</small>`:''}</div>`}).join('')}</div>
  <h3 style="margin:14px 0 6px">Melhor nota por partido</h3><div class="bpgrid">${IDEO.map(i=>`<div><span>${i.sig}</span><b>${bp[i.k]!=null?bp[i.k]:'—'}</b></div>`).join('')}</div>

@@ -1,0 +1,783 @@
+<title>Padel Tour</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Press+Start+2P&family=Silkscreen&family=VT323&display=swap">
+<style>
+/* Layout: manual de cartucho 16-bit — cada seção é uma "tela" emoldurada, sprites vivos em canvas 1:1 ampliados sem suavização */
+:root{
+  --night:#0b1030; --night2:#141b4a; --panel:#18205a; --court:#1f4fd1; --courtS:#173a9e;
+  --glass:#8fe3ff; --ball:#d7f23a; --sun:#ffc83a; --coral:#ff4d5e; --mint:#19d3b0;
+  --magenta:#ff5ad1; --orange:#ff8a1f; --ink:#f4f7ff; --mute:#a3add8; --line:#2c377a;
+  --f-display:"Press Start 2P", "Silkscreen", ui-monospace, monospace;
+  --f-body:"Chakra Petch", system-ui, sans-serif;
+  --f-data:"VT323", ui-monospace, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--night);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 2px,transparent 2px 4px);}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:56px}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;max-width:100%}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.5;text-wrap:balance;margin:0}
+h2{font-size:15px;color:var(--sun);letter-spacing:.04em}
+h3{font-size:11px;letter-spacing:.04em}
+p{margin:0;max-width:65ch}
+.eyebrow{font-family:var(--f-data);font-size:20px;color:var(--mint);letter-spacing:.08em;text-transform:uppercase}
+.sec{display:flex;flex-direction:column;gap:20px}
+.sec-head{display:flex;flex-direction:column;gap:8px;border-left:4px solid var(--sun);padding-left:12px}
+.lede{color:var(--mute)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:center}
+.hero-copy{display:flex;flex-direction:column;gap:18px;min-width:0}
+.tag{font-family:var(--f-display);font-size:11px;line-height:1.9;color:var(--ink)}
+.tag b{color:var(--ball);font-weight:400}
+.screen{border:4px solid var(--ink);box-shadow:0 0 0 4px var(--night),0 0 0 8px var(--line),8px 8px 0 8px rgba(0,0,0,.45);background:#000;position:relative}
+.screen canvas{width:100%;height:auto}
+.specs{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--f-data);font-size:19px;line-height:1;padding:6px 10px;border:2px solid var(--line);color:var(--mute);background:var(--night2)}
+.chip b{color:var(--ink);font-weight:400}
+
+/* regras */
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.rule{background:var(--night2);border:2px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.rule h3{color:var(--glass)}
+.rule p{font-size:15px}
+.rule .game{font-family:var(--f-data);font-size:19px;line-height:1.2;color:var(--ball);border-top:2px dashed var(--line);padding-top:8px}
+.note{font-size:14px;color:var(--mute);max-width:80ch}
+
+/* golpes */
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.shot{background:var(--night2);border:2px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.shot canvas{width:100%;height:auto;border-bottom:2px solid var(--line);background:#000}
+.shot-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.shot-body h3{font-size:12px}
+.shot-body p{font-size:14px;color:var(--mute)}
+.input{font-family:var(--f-data);font-size:19px;line-height:1.15;color:var(--ink)}
+.input i{font-style:normal;color:var(--sun)}
+.pips{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-family:var(--f-data);font-size:17px;color:var(--mute);align-items:center}
+.bar{display:flex;gap:3px}
+.bar span{width:12px;height:8px;background:var(--line)}
+.bar span.on{background:var(--c,var(--sun))}
+
+/* controles */
+.phone{position:relative;width:100%;max-width:820px;aspect-ratio:2.16/1;background:#05081c;border:6px solid #222a5c;border-radius:28px;box-shadow:0 0 0 3px #0b1030,10px 10px 0 rgba(0,0,0,.4);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;overflow:hidden}
+.phone canvas{height:100%;width:auto;aspect-ratio:8/7}
+.zone{height:100%;display:flex;align-items:center;justify-content:center;position:relative}
+.stick{width:44%;max-width:120px;aspect-ratio:1;border-radius:50%;border:4px solid rgba(244,247,255,.25);display:grid;place-items:center;background:rgba(255,255,255,.04)}
+.stick::after{content:"";width:46%;aspect-ratio:1;border-radius:50%;background:var(--glass);box-shadow:inset -4px -4px 0 rgba(0,0,0,.3),inset 3px 3px 0 rgba(255,255,255,.5);border:3px solid var(--night)}
+.pad{position:relative;width:78%;max-width:190px;aspect-ratio:1}
+.pbtn{position:absolute;width:40%;aspect-ratio:1;border-radius:50%;border:3px solid var(--night);display:grid;place-items:center;font-family:var(--f-display);font-size:clamp(6px,1.1vw,10px);color:var(--night);box-shadow:inset -4px -4px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.45)}
+.pbtn.a{background:var(--sun);right:4%;bottom:6%;width:46%}
+.pbtn.b{background:var(--glass);left:2%;bottom:18%}
+.pbtn.c{background:var(--coral);right:12%;top:0;color:var(--ink)}
+.map{width:100%;border-collapse:collapse;font-size:15px;min-width:620px}
+.map th,.map td{border:2px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+.map th{font-family:var(--f-display);font-size:9px;font-weight:400;line-height:1.6;background:var(--panel)}
+.map td:first-child{font-family:var(--f-data);font-size:19px;color:var(--glass);white-space:nowrap}
+.map small{display:block;color:var(--mute);font-size:13px}
+.scroll{overflow-x:auto;max-width:100%}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--night);vertical-align:-1px;margin-right:6px}
+
+.lab{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:24px;background:var(--night2);border:2px solid var(--line);padding:18px;align-items:start}
+.lab .screen canvas{width:100%}
+.lab-ui{display:flex;flex-direction:column;gap:16px;min-width:0}
+.lab-ui fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.lab-ui legend{font-family:var(--f-data);font-size:18px;color:var(--mute);padding:0;margin-bottom:6px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font-family:var(--f-data);font-size:19px;line-height:1;padding:8px 12px;background:var(--night);color:var(--mute);border:2px solid var(--line);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--court);color:var(--ink);border-color:var(--glass)}
+.btns{display:flex;gap:14px;flex-wrap:wrap}
+.gbtn{width:84px;height:84px;border-radius:50%;border:4px solid var(--night);font-family:var(--f-display);font-size:9px;cursor:pointer;color:var(--night);box-shadow:inset -5px -5px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.45),0 5px 0 #05081c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.gbtn span{font-size:18px}
+.gbtn:active,.gbtn.down{transform:translateY(4px);box-shadow:inset -5px -5px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.45),0 1px 0 #05081c}
+.gbtn.a{background:var(--sun)} .gbtn.b{background:var(--glass)} .gbtn.c{background:var(--coral);color:var(--ink)}
+button:focus-visible{outline:3px solid var(--ball);outline-offset:3px}
+.out{border-top:2px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px;min-height:96px}
+.out h3{color:var(--ball);font-size:13px}
+.out p{font-size:15px;color:var(--mute)}
+
+/* elenco */
+.cast{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.card{background:var(--night2);border:2px solid var(--line);display:flex;flex-direction:column}
+.card canvas{width:100%;height:auto;background:#000;border-bottom:2px solid var(--line)}
+.card .shot-body h3 span{color:var(--mute);font-family:var(--f-data);font-size:18px;margin-left:8px}
+
+/* identidade */
+.idgrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.sw{border:2px solid var(--line);background:var(--night2)}
+.sw i{display:block;height:54px;border-bottom:2px solid var(--line)}
+.sw div{padding:8px 10px;display:flex;flex-direction:column}
+.sw b{font-family:var(--f-data);font-size:19px;font-weight:400;line-height:1.1}
+.sw code{font-family:var(--f-data);font-size:17px;color:var(--mute)}
+.types{display:flex;flex-direction:column;gap:14px}
+.type{border:2px solid var(--line);padding:14px;background:var(--night2);display:flex;flex-direction:column;gap:6px}
+.type .lbl{font-family:var(--f-data);font-size:17px;color:var(--mute)}
+.fx{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.fx figure{margin:0;background:var(--night2);border:2px solid var(--line)}
+.fx canvas{width:100%;height:auto;background:#000;border-bottom:2px solid var(--line)}
+.fx figcaption{padding:8px 10px;font-family:var(--f-data);font-size:18px;line-height:1.15;color:var(--mute)}
+.fx figcaption b{color:var(--ink);font-weight:400;display:block}
+.logos{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch}
+.logos figure{margin:0;border:2px solid var(--line);background:var(--night2);display:flex;flex-direction:column}
+.logos .art{flex:1;display:grid;place-items:center;padding:16px}
+.logos canvas{width:100%;height:auto}
+.logos .icon canvas{width:min(128px,100%)}
+.logos figcaption{border-top:2px solid var(--line);padding:8px 10px;font-family:var(--f-data);font-size:18px;color:var(--mute)}
+.light{background:var(--ink)!important}
+
+.next{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;counter-reset:n}
+.step{border:2px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:8px}
+.step h3{color:var(--mint)}
+.step p{font-size:15px;color:var(--mute)}
+.src{font-size:14px;color:var(--mute);display:flex;flex-direction:column;gap:4px}
+.src a{color:var(--glass)}
+
+@media (max-width:760px){
+  .hero,.idgrid,.lab{grid-template-columns:minmax(0,1fr)}
+  .logos{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .logos figure:first-child{grid-column:1/-1}
+  .phone{border-width:4px;border-radius:18px}
+  h2{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){.gbtn{transition:none}}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="hero-copy">
+    <h1 class="sr">Padel Tour</h1>
+    <canvas id="logo" width="208" height="84" aria-label="Logotipo Padel Tour"></canvas>
+    <p class="tag">Vidro, parede e <b>víbora</b>.<br>Padel arcade em 16 bits.</p>
+    <p class="lede">Documento de identidade visual e design de jogo, fase 1: regras pesquisadas, sprites animados, controles com 3 botões e paleta. Tudo nesta página é desenhado em pixel, na resolução nativa do jogo, e ampliado sem suavização.</p>
+    <div class="specs">
+      <span class="chip">Tela <b>256×224</b></span>
+      <span class="chip">Sprite <b>16×24</b></span>
+      <span class="chip">Paleta <b>12 cores-base</b></span>
+      <span class="chip">Botões <b>3</b></span>
+    </div>
+  </div>
+  <div class="screen"><canvas id="scene" width="256" height="224" aria-label="Cena do jogo: rali de duplas com saída de parede e víbora"></canvas></div>
+</header>
+
+<section class="sec" id="regras">
+  <div class="sec-head">
+    <span class="eyebrow">01 · Pesquisa</span>
+    <h2>Regras que o jogo implementa</h2>
+    <p class="lede">Base: Regulamento de Padel da FIP e circuitos 2026. Cada regra traz como ela vira mecânica.</p>
+  </div>
+  <div class="rules">
+    <article class="rule"><h3>Quadra fechada</h3><p>20 × 10 m, cercada por vidro (fundo 3 m + 1 m de grade) e laterais em vidro e grade. Rede de 0,88 m no centro e 0,92 m nos postes. Linhas de saque a 6,95 m da rede.</p><p class="game">JOGO: câmera 3/4 vertical; cada parede tem material (vidro = rebote previsível, grade = rebote morto e aleatório).</p></article>
+    <article class="rule"><h3>Saque por baixo</h3><p>O sacador quica a bola atrás da linha de saque e bate na altura da cintura ou abaixo, na diagonal, dentro do quadrado do adversário. Duas tentativas. Bola que quica no quadrado e bate na grade é falta; no vidro, vale.</p><p class="game">JOGO: saque com 1 toque e janela de tempo; o golpe de cima nunca é permitido no saque.</p></article>
+    <article class="rule"><h3>Chão antes da parede</h3><p>A bola precisa quicar no chão do adversário antes de tocar qualquer parede ou grade dele. Se acertar o vidro dele direto, o ponto é de quem defende.</p><p class="game">JOGO: cada bola carrega o estado "já quicou"; colisão com parede antes disso encerra o ponto.</p></article>
+    <article class="rule"><h3>Paredes depois do quique</h3><p>Após quicar, a bola pode bater em quantas paredes do seu lado precisar antes de você devolver. Também é legal jogar contra o próprio vidro para mandá-la por cima da rede (contrapared).</p><p class="game">JOGO: base da saída de parede e da bajada. Leitura do rebote é o atributo "Parede" de cada atleta.</p></article>
+    <article class="rule"><h3>Um quique, voleio livre</h3><p>Só pode deixar quicar uma vez no chão. Voleio é permitido, exceto na devolução do saque, que precisa quicar. Tocar a rede com corpo ou raquete perde o ponto.</p><p class="game">JOGO: segundo quique ou toque na rede = ponto para o adversário, com aviso no placar.</p></article>
+    <article class="rule"><h3>Placar e Star Point</h3><p>15-30-40-game, sets a 6 com tie-break em 6-6, melhor de 3. Em 2026 os circuitos FIP/Premier adotaram o Star Point: em 40-40 jogam-se até duas vantagens; se empatar de novo, vale um ponto decisivo, com o lado escolhido por quem recebe.</p><p class="game">JOGO: modo Tour usa Star Point; modo Arcade usa 1 set de 4 games com ponto de ouro.</p></article>
+    <article class="rule"><h3>Bola fora da quadra</h3><p>Quando um remate sai por cima do vidro lateral (por 3) ou do fundo (por 4), quem defende pode sair da quadra e buscar a bola em quadras com abertura lateral.</p><p class="game">JOGO: na fase 1 o remate que sai é ponto direto; buscar fora da quadra fica para a fase 2.</p></article>
+  </div>
+  <p class="note">A redação de 2026 sobre a posição do pé no saque circula em guias nacionais e ainda deve ser conferida no texto oficial da FIP antes de fecharmos o modo simulação.</p>
+</section>
+
+<section class="sec" id="golpes">
+  <div class="sec-head">
+    <span class="eyebrow">02 · Sprites</span>
+    <h2>Repertório de golpes</h2>
+    <p class="lede">11 animações montadas sobre o mesmo corpo 16×24: o braço e a raquete são desenhados por ângulo, então novos golpes custam só uma lista de quadros. O rastro colorido identifica o tipo de golpe.</p>
+  </div>
+  <div class="shots" id="shots"></div>
+</section>
+
+<section class="sec" id="controles">
+  <div class="sec-head">
+    <span class="eyebrow">03 · Controles</span>
+    <h2>Três botões, um contexto</h2>
+    <p class="lede">O jogo lê a situação da bola (saque, baixa, vinda do vidro, alta) e cada botão vira o golpe certo para aquele momento. A direção do analógico mira (cruzado ou paralelo) e modula: frente = agressivo, trás = suave.</p>
+  </div>
+  <div class="phone" aria-label="Layout em tela de celular na horizontal">
+    <div class="zone"><div class="stick"></div></div>
+    <canvas id="phoneView" width="256" height="224"></canvas>
+    <div class="zone"><div class="pad">
+      <div class="pbtn c">AÉREO</div><div class="pbtn b">LOB</div><div class="pbtn a">BATER</div>
+    </div></div>
+  </div>
+  <div class="scroll">
+    <table class="map">
+      <thead><tr><th>Situação</th><th><span class="dot" style="background:var(--sun)"></span>BATER</th><th><span class="dot" style="background:var(--glass)"></span>LOB</th><th><span class="dot" style="background:var(--coral)"></span>AÉREO</th></tr></thead>
+      <tbody>
+        <tr><td>Saque</td><td>Saque chapado<small>rápido, quica e corre</small></td><td>Saque cortado<small>lento, morre no vidro</small></td><td>—<small>saque é sempre por baixo</small></td></tr>
+        <tr><td>Bola baixa</td><td>Drive ou revés<small>lado automático · ↓ = chiquita</small></td><td>Lob<small>passa por cima da dupla na rede</small></td><td>Vira golpe normal<small>sem bola alta não há aéreo</small></td></tr>
+        <tr><td>Vinda do vidro</td><td>Saída de parede<small>contra-ataque no rebote</small></td><td>Saída em lob<small>defesa para recuperar a rede</small></td><td>Bajada<small>rebote alto atacado de cima</small></td></tr>
+        <tr><td>Bola alta</td><td>Voleio<small>bloqueio curto na rede</small></td><td>Lob de defesa<small>ganha tempo</small></td><td>Bandeja · ↑ víbora<small>segurar e soltar = remate por 3</small></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Modo só toque: metade esquerda da tela é um analógico flutuante (ou movimento assistido, em que o jogador corre sozinho para a bola). Na metade direita, toque = BATER, deslizar para cima = LOB, deslizar para baixo = AÉREO; deslizar na diagonal para baixo = víbora; segurar e soltar = remate.</p>
+
+  <div class="lab">
+    <div class="screen"><canvas id="lab" width="72" height="60" aria-label="Laboratório de golpes"></canvas></div>
+    <div class="lab-ui">
+      <fieldset><legend>Situação da bola</legend>
+        <div class="seg" id="ctx">
+          <button type="button" id="ctx-saque" data-v="saque" aria-pressed="false">Saque</button>
+          <button type="button" id="ctx-baixa" data-v="baixa" aria-pressed="true">Bola baixa</button>
+          <button type="button" id="ctx-vidro" data-v="vidro" aria-pressed="false">Vinda do vidro</button>
+          <button type="button" id="ctx-alta" data-v="alta" aria-pressed="false">Bola alta</button>
+        </div>
+      </fieldset>
+      <fieldset><legend>Analógico</legend>
+        <div class="seg" id="dir">
+          <button type="button" id="dir-0" data-v="0" aria-pressed="true">Neutro</button>
+          <button type="button" id="dir-up" data-v="up" aria-pressed="false">↑ Frente</button>
+          <button type="button" id="dir-down" data-v="down" aria-pressed="false">↓ Trás</button>
+        </div>
+      </fieldset>
+      <div class="btns">
+        <button type="button" class="gbtn a" id="bA" data-b="A"><span>●</span>BATER</button>
+        <button type="button" class="gbtn b" id="bB" data-b="B"><span>▲</span>LOB</button>
+        <button type="button" class="gbtn c" id="bC" data-b="C"><span>★</span>AÉREO</button>
+      </div>
+      <div class="out" aria-live="polite"><h3 id="outName">Toque um botão</h3><p id="outDesc">Escolha a situação, a direção e aperte um botão. Segure AÉREO por meio segundo com bola alta para carregar o remate por 3.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="elenco">
+  <div class="sec-head">
+    <span class="eyebrow">04 · Elenco</span>
+    <h2>Duplas do circuito</h2>
+    <p class="lede">Um corpo base com troca de paleta. Vista de frente para a dupla do fundo, de costas para a dupla perto da câmera. Atributos de 1 a 5.</p>
+  </div>
+  <div class="cast" id="cast"></div>
+</section>
+
+<section class="sec" id="identidade">
+  <div class="sec-head">
+    <span class="eyebrow">05 · Identidade</span>
+    <h2>Marca, paleta e tipos</h2>
+    <p class="lede">A cor nasce da quadra de competição: piso azul, vidro ciano e a bola amarelo-neon como acento único. As duplas usam coral (Time Sol) e menta (Time Mar), que contrastam com o azul do piso.</p>
+  </div>
+  <div class="logos">
+    <figure><div class="art"><canvas id="logo2" width="208" height="84"></canvas></div><figcaption>Logo principal · contorno noite, sombra coral</figcaption></figure>
+    <figure class="icon"><div class="art"><canvas id="icon" width="32" height="32"></canvas></div><figcaption>Ícone do app · 32×32</figcaption></figure>
+    <figure class="icon"><div class="art light"><canvas id="icon2" width="32" height="32"></canvas></div><figcaption>Ícone sobre claro</figcaption></figure>
+  </div>
+  <div class="idgrid">
+    <div class="swatches" id="swatches"></div>
+    <div class="types">
+      <div class="type"><span class="lbl">Display · Press Start 2P · grade de 8 px</span><span style="font-family:var(--f-display);font-size:16px;line-height:1.6">STAR POINT<br><span style="color:var(--ball)">40 – 40</span></span></div>
+      <div class="type"><span class="lbl">HUD e números · VT323</span><span style="font-family:var(--f-data);font-size:30px;line-height:1">SET 1 · 4-3 · 154 km/h</span></div>
+      <div class="type"><span class="lbl">Texto de apoio · Chakra Petch</span><span>Menus, tutoriais e descrições de golpe. Sem serifa, com cortes retos que conversam com o pixel sem cansar a leitura.</span></div>
+    </div>
+  </div>
+  <div class="fx" id="fx"></div>
+</section>
+
+<section class="sec" id="proximos">
+  <div class="sec-head">
+    <span class="eyebrow">06 · Roteiro</span>
+    <h2>Próximas fases</h2>
+  </div>
+  <div class="next">
+    <div class="step"><h3>Fase 2 · Protótipo</h3><p>Física da bola em 3D (x, y, altura) com rebote por material, quique, rede e paredes. Um jogador controlável contra uma parede de treino.</p></div>
+    <div class="step"><h3>Fase 3 · Duplas</h3><p>IA do parceiro (fundo/rede, cobertura do meio) e IA adversária com 3 níveis. Placar completo com Star Point.</p></div>
+    <div class="step"><h3>Fase 4 · Modos</h3><p>Arcade, Treino de golpes e Tour: circuito por cidades com quadras de cores e torcidas diferentes.</p></div>
+    <div class="step"><h3>Fase 5 · Som e polimento</h3><p>Trilha chiptune, som do vidro e da grade, vibração no toque, salvamento local e instalação como app (PWA).</p></div>
+  </div>
+  <div class="src">
+    <span>Fontes da pesquisa</span>
+    <a href="https://www.padelfip.com/2025/12/fip-promises-new-regulations-published-effective-from-2026/" target="_blank" rel="noopener">FIP · regulamentos em vigor a partir de 2026</a>
+    <a href="https://padelusa.org/wp-content/uploads/2026/06/2026-COMPETITION-STRUCTURE-GUIDE-JUN-30-2026.pdf" target="_blank" rel="noopener">USA Padel · guia de competição 2026 (Star Point, saque)</a>
+    <a href="https://www.padeladdict.com/en/what-is-the-star-point-this-is-premier-padels-new-scoring-system/amp/" target="_blank" rel="noopener">Padel Addict · como funciona o Star Point</a>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const FONT='"Press Start 2P", "Silkscreen"';
+const OUT='#0b1030';
+const P={night:'#0b1030',night2:'#141b4a',court:'#1f4fd1',courtS:'#173a9e',line:'#f4f7ff',glass:'#8fe3ff',glassL:'#d6f6ff',mesh:'#39415e',ball:'#d7f23a',ballS:'#8fb51c',ballL:'#f6ffb0',sun:'#ffc83a',coral:'#ff4d5e',mint:'#19d3b0',orange:'#ff8a1f',magenta:'#ff5ad1'};
+
+/* ---------- personagens ---------- */
+const CH=[
+ {id:'lia',nome:'LIA',time:'Sol',estilo:'Muralha',bio:'Lê o vidro antes de todo mundo. Especialista em saída de parede.',skin:'#f2c094',skinS:'#c98a5e',hair:'#4a2a17',band:P.sun,shirt:P.coral,shirtS:'#b8263a',shorts:'#1b1f3b',shortsS:'#0f1226',shoe:P.coral,frame:P.sun,face:'#2a2f55',face2:'#3c4479',st:{Potência:3,Controle:5,Velocidade:4,Parede:5}},
+ {id:'rafa',nome:'RAFA',time:'Sol',estilo:'Canhão',bio:'Joga na esquerda e manda remate por 3 quando a bola sobe.',skin:'#c68a5a',skinS:'#93613b',hair:'#161616',band:P.line,shirt:P.coral,shirtS:'#b8263a',shorts:'#f4f7ff',shortsS:'#b9c2e6',shoe:'#1b1f3b',frame:P.line,face:'#2a2f55',face2:'#3c4479',st:{Potência:5,Controle:3,Velocidade:3,Parede:3}},
+ {id:'kai',nome:'KAI',time:'Mar',estilo:'Víbora',bio:'Muito efeito lateral. A bola dele sai rasteira do vidro.',skin:'#8d5a3b',skinS:'#5f3a24',hair:'#0d0d0d',band:P.line,shirt:P.mint,shirtS:'#0f8f7a',shorts:'#1b1f3b',shortsS:'#0f1226',shoe:P.mint,frame:P.magenta,face:'#2a2f55',face2:'#3c4479',st:{Potência:4,Controle:4,Velocidade:3,Parede:3}},
+ {id:'nico',nome:'NICO',time:'Mar',estilo:'Relâmpago',bio:'Chega em todas. Cobre o meio e devolve lob de qualquer canto.',skin:'#f6d3b3',skinS:'#d1a07c',hair:'#e8c25a',band:P.ball,shirt:P.mint,shirtS:'#0f8f7a',shorts:'#f4f7ff',shortsS:'#b9c2e6',shoe:'#1b1f3b',frame:P.ball,face:'#2a2f55',face2:'#3c4479',st:{Potência:2,Controle:4,Velocidade:5,Parede:4}}
+];
+
+const UPPER=[
+"......oooo......",
+".....ohhhho.....",
+"....ohhhhhho....",
+"....occcccco....",
+"....osssssso....",
+"....osesseso....",
+"....ossssSSo....",
+".....osssSo.....",
+"....ootsstTo....",
+"...otttttttTo...",
+"..ostttttttTo...",
+"..ostttttttTo...",
+"..oSotttttTTo...",
+"..oso.pppppPo..."];
+const LEGS={
+ stand:[".....oppppPo....",".....opPoPPo....",".....osSoSSo....",".....osSoSSo....",".....osSoSSo....",".....owwowwo....",".....owwowwo....","....okkwokkwo...","....ooooooooo..."],
+ runA:[".....oppppPo....",".....opppPPo....","....opPo.oPPo...","...osSo...oSSo..","..osSo.....oSo..","..owwo.....owo..",".okkwo....owwo..",".ooooo....okkwo.","..........ooooo."],
+ crouch:[".....oppppPo....","....opPPoPPPo...","...osSo..oSSo...","...osSo..oSSo...","...owwo..owwo...","..okkwo.okkwo...","..ooooo.ooooo..."]
+};
+LEGS.runB=LEGS.runA.map((r,i)=>i<2?r:r.split('').reverse().join(''));
+
+function col(ch,k){switch(k){case 's':return ch.skin;case 'S':return ch.skinS;case 'h':return ch.hair;case 'c':return ch.band;case 'e':return OUT;case 't':return ch.shirt;case 'T':return ch.shirtS;case 'p':return ch.shorts;case 'P':return ch.shortsS;case 'w':return '#f4f7ff';case 'k':return ch.shoe;default:return null;}}
+function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function dot(g,x,y,c){g.fillStyle=c;g.fillRect(Math.floor(x),Math.floor(y),1,1);}
+
+function racket(g,sx,sy,ang,ch){
+ const a=ang*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a),nx=-dy,ny=dx;
+ for(let i=0;i<=4;i++){dot(g,sx+dx*i,sy+dy*i,ch.skin);dot(g,sx+dx*i+nx,sy+dy*i+ny,ch.skinS);}
+ for(let i=5;i<=6;i++)dot(g,sx+dx*i,sy+dy*i,'#2a2f55');
+ const cx=sx+dx*10.5,cy=sy+dy*10.5;
+ for(let Y=Math.floor(cy-6);Y<=cy+6;Y++)for(let X=Math.floor(cx-6);X<=cx+6;X++){
+  const ux=X+.5-cx,uy=Y+.5-cy,u=ux*dx+uy*dy,v=ux*nx+uy*ny,e=(u*u)/19.4+(v*v)/12.96;
+  if(e<=1){g.fillStyle=e>0.5?ch.frame:(((X+Y)&1)?ch.face:ch.face2);g.fillRect(X,Y,1,1);}
+ }
+}
+function outline(g,W,H){
+ const im=g.getImageData(0,0,W,H),d=im.data,o=new Uint8ClampedArray(d);
+ const op=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&d[(y*W+x)*4+3]>200;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  if(!op(x,y)&&(op(x-1,y)||op(x+1,y)||op(x,y-1)||op(x,y+1))){const i=(y*W+x)*4;o[i]=11;o[i+1]=16;o[i+2]=48;o[i+3]=255;}
+ }
+ im.data.set(o);g.putImageData(im,0,0);
+}
+function smear(h,sx,sy,from,to,c){
+ const n=Math.max(2,Math.ceil(Math.abs(to-from)/9));
+ h.fillStyle=c;
+ for(let i=0;i<n;i++){const an=(from+(to-from)*i/n)*Math.PI/180,x=sx+Math.cos(an)*10.5,y=sy+Math.sin(an)*10.5;
+  h.globalAlpha=.25+.45*(i/n);h.fillRect(Math.round(x)-2,Math.round(y)-2,4,4);}
+ h.globalAlpha=1;
+}
+const SPR=new Map();
+const SW=48,SH=44,FOOTX=24,FOOTY=35;
+function sprite(ch,f,trail,back){
+ const key=[ch.id,f.a,f.l||'',f.b||0,f.j||0,f.s==null?'':f.s,back?1:0,trail||''].join('|');
+ if(SPR.has(key))return SPR.get(key);
+ const A=mk(SW,SH),g=A.getContext('2d',{willReadFrequently:true});
+ const ox=16,oy=14-(f.j||0),cr=f.l==='crouch'?2:0,b=f.b||0;
+ UPPER.forEach((row,r)=>{for(let i=0;i<16;i++){let k=row[i];if(back&&r>=4&&r<=6&&'sSe'.includes(k))k='h';const c=col(ch,k);if(c){g.fillStyle=c;g.fillRect(ox+i,oy+r+b+cr,1,1);}}});
+ const L=LEGS[f.l]||LEGS.stand;
+ L.forEach((row,r)=>{for(let i=0;i<16;i++){const c=col(ch,row[i]);if(c){g.fillStyle=c;g.fillRect(ox+i,oy+14+cr+r,1,1);}}});
+ const sx=ox+12.5,sy=oy+10+b+cr;
+ racket(g,sx,sy,f.a,ch);
+ outline(g,SW,SH);
+ const F=mk(SW,SH),h=F.getContext('2d');
+ if(f.s!=null&&trail)smear(h,sx,sy,f.s,f.a,trail);
+ h.drawImage(A,0,0);
+ SPR.set(key,F);return F;
+}
+function contactOf(f){const sx=16+12.5,sy=14-(f.j||0)+10+(f.b||0)+(f.l==='crouch'?2:0),a=f.a*Math.PI/180;return {x:sx+Math.cos(a)*10.5,y:sy+Math.sin(a)*10.5};}
+
+/* ---------- animações (ângulo do braço em graus, 0 = direita, -90 = cima) ---------- */
+const ANIMS={
+ idle:{loop:1,f:[{a:40,t:340},{a:40,b:1,t:340}]},
+ run:{loop:1,f:[{a:30,l:'runA',t:100},{a:30,b:1,t:100},{a:30,l:'runB',t:100},{a:30,b:1,t:100}]},
+ saque:{trail:P.ball,f:[{a:60,t:300},{a:80,t:260},{a:100,t:160},{a:30,s:100,hit:1,t:80},{a:-50,s:30,t:90},{a:-80,s:-50,t:240},{a:40,t:220}],
+  path:[[-760,'Hx','Hy'],[-380,'Hx',52],[0,'C','C',8],[340,-6,22,8]]},
+ drive:{trail:P.sun,f:[{a:40,t:120},{a:-20,t:160},{a:-35,t:200},{a:40,s:-35,hit:1,t:70},{a:130,s:40,t:70},{a:200,s:130,t:220},{a:120,t:120},{a:40,t:200}],
+  path:[[-640,76,18],[-300,54,52,10],[0,'C','C',7],[280,-6,18,5]]},
+ reves:{trail:P.sun,f:[{a:40,t:120},{a:190,t:160},{a:215,t:200},{a:140,s:215,hit:1,t:70},{a:50,s:140,t:70},{a:-30,s:50,t:220},{a:20,t:120},{a:40,t:200}],
+  path:[[-640,-4,18],[-300,14,52,10],[0,'C','C',7],[280,78,16,5]]},
+ voleio:{trail:P.line,f:[{a:40,t:120},{a:-10,t:220},{a:22,s:-10,hit:1,t:90},{a:35,t:260},{a:40,t:150}],
+  path:[[-460,76,22],[0,'C','C',3],[240,-6,24,2]]},
+ lob:{trail:P.glass,f:[{a:40,t:100},{a:90,l:'crouch',t:200},{a:105,l:'crouch',t:200},{a:45,l:'crouch',s:105,hit:1,t:80},{a:-40,s:45,t:90},{a:-85,s:-40,t:300},{a:-20,t:150},{a:40,t:200}],
+  path:[[-640,76,18],[-300,54,52,10],[0,'C','C',6],[760,-8,30,52]]},
+ chiquita:{trail:P.mint,f:[{a:40,t:100},{a:20,l:'crouch',t:240},{a:62,l:'crouch',s:20,hit:1,t:120},{a:80,l:'crouch',t:280},{a:40,t:200}],
+  path:[[-640,76,18],[-300,54,52,10],[0,'C','C',6],[620,-6,50,8]]},
+ bandeja:{trail:P.line,f:[{a:40,t:100},{a:-100,t:160},{a:-125,t:280},{a:-70,s:-125,j:2,hit:1,t:80},{a:-10,s:-70,j:1,t:90},{a:30,s:-10,t:240},{a:40,t:200}],
+  path:[[-720,76,-6],[0,'C','C',12],[320,-6,30,3]]},
+ vibora:{trail:P.magenta,f:[{a:40,t:80},{a:-140,j:1,t:140},{a:-170,j:3,t:240},{a:-60,s:-170,j:4,hit:1,t:60},{a:60,s:-60,j:3,t:60},{a:130,s:60,j:1,t:220},{a:80,t:120},{a:40,t:200}],
+  path:[[-720,76,-6],[0,'C','C',12],[200,-6,46]]},
+ remate:{trail:P.orange,f:[{a:40,t:80},{a:-90,l:'crouch',t:200},{a:-115,j:5,t:160},{a:-120,j:7,t:140},{a:-80,s:-120,j:7,hit:1,t:60},{a:70,s:-80,j:5,t:70},{a:110,s:70,j:2,t:120},{a:100,l:'crouch',t:220},{a:40,t:200}],
+  path:[[-720,76,-8],[0,'C','C',12],[160,16,52],[520,-6,-8,10]]},
+ saida:{trail:P.mint,glass:1,f:[{a:40,t:200},{a:90,l:'crouch',t:320},{a:100,l:'crouch',t:320},{a:30,l:'crouch',s:100,hit:1,t:80},{a:-40,s:30,t:90},{a:-70,s:-40,t:260},{a:40,t:200}],
+  path:[[-1040,-4,12],[-720,18,52,8],[-420,63,30,8,'glass'],[0,'C','C',6],[620,-8,16,16]]},
+ bajada:{trail:P.orange,glass:1,f:[{a:40,t:200},{a:-60,l:'crouch',t:300},{a:-100,j:2,t:320},{a:-30,s:-100,j:3,hit:1,t:70},{a:60,s:-30,j:2,t:80},{a:110,s:60,t:220},{a:40,t:200}],
+  path:[[-1040,-4,12],[-720,18,52,8],[-420,63,16,12,'glass'],[0,'C','C',10],[220,-6,46]]}
+};
+for(const k in ANIMS){const A=ANIMS[k];let tot=0,hit=0,hf=A.f[0];A.f.forEach(fr=>{if(fr.hit){hit=tot;hf=fr;}tot+=fr.t;});A.tot=tot;A.hit=hit;A.hf=hf;A.C=contactOf(hf);}
+function frameAt(A,el){let acc=0;for(const fr of A.f){if(el<acc+fr.t)return fr;acc+=fr.t;}return A.f[A.f.length-1];}
+function loopFrame(name,now){const A=ANIMS[name];return frameAt(A,now%A.tot);}
+
+const SHOTS={
+ saque:{nome:'SAQUE',desc:'Por baixo, depois de quicar, na altura da cintura e na diagonal.',input:'<i>BATER</i> chapado · <i>LOB</i> cortado',r:[3,2,3]},
+ drive:{nome:'DRIVE',desc:'Golpe de fundo do lado da raquete, após o quique.',input:'<i>BATER</i> com bola baixa',r:[4,2,2]},
+ reves:{nome:'REVÉS',desc:'O mesmo golpe do outro lado do corpo. O jogo escolhe o lado sozinho.',input:'<i>BATER</i> com bola do outro lado',r:[3,2,3]},
+ voleio:{nome:'VOLEIO',desc:'Bloqueio curto antes do quique, colado na rede.',input:'<i>BATER</i> com bola alta perto da rede',r:[3,1,2]},
+ lob:{nome:'LOB',desc:'Globo por cima da dupla adversária para tomar a rede de volta.',input:'<i>LOB</i>',r:[1,5,2]},
+ chiquita:{nome:'CHIQUITA',desc:'Bola lenta e baixa nos pés de quem está na rede.',input:'<i>BATER</i> + ↓ com bola baixa',r:[1,1,3]},
+ bandeja:{nome:'BANDEJA',desc:'Aéreo com corte para manter a rede. A bola não sobe no vidro.',input:'<i>AÉREO</i> com bola alta',r:[3,3,4]},
+ vibora:{nome:'VÍBORA',desc:'Bandeja agressiva, com efeito lateral: sai rasteira do vidro lateral.',input:'<i>AÉREO</i> + ↑ com bola alta',r:[4,2,5]},
+ remate:{nome:'REMATE POR 3',desc:'Smash chapado que quica e sai por cima do vidro lateral.',input:'Segurar e soltar <i>AÉREO</i>',r:[5,4,1]},
+ saida:{nome:'SAÍDA DE PAREDE',desc:'Deixa a bola bater no vidro do fundo e devolve no rebote.',input:'<i>BATER</i> com bola vinda do vidro',r:[3,3,3]},
+ bajada:{nome:'BAJADA',desc:'Rebote alto do vidro atacado de cima para baixo.',input:'<i>AÉREO</i> com rebote alto',r:[5,2,3]}
+};
+
+/* ---------- texto em pixel (Press Start 2P limiarizada) ---------- */
+const TXT=new Map();
+function ptext(str,size,fill,o={}){
+ const key=[str,size,typeof fill==='string'?fill:'grad',o.outline||0,o.oc||'',o.shadow||''].join('|');
+ if(TXT.has(key))return TXT.get(key);
+ const pad=(o.outline||0)+3+(o.shadow?2:0);
+ const m=mk(10,10).getContext('2d');m.font=size+'px '+FONT;
+ const w=Math.ceil(m.measureText(str).width)+pad*2,h=Math.ceil(size*1.3)+pad*2;
+ const c=mk(w,h),g=c.getContext('2d',{willReadFrequently:true});
+ g.font=size+'px '+FONT;g.textBaseline='top';g.fillStyle='#fff';g.fillText(str,pad,pad+Math.round(size*.15));
+ const im=g.getImageData(0,0,w,h),d=im.data;
+ let top=h,bot=0;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;if(d[i+3]>=110){if(y<top)top=y;if(y>bot)bot=y;}}
+ const hexs=s=>[parseInt(s.slice(1,3),16),parseInt(s.slice(3,5),16),parseInt(s.slice(5,7),16)];
+ for(let y=0;y<h;y++){
+  const fr=bot>top?(y-top)/(bot-top):0, cc=hexs(typeof fill==='string'?fill:fill(fr));
+  for(let x=0;x<w;x++){const i=(y*w+x)*4;if(d[i+3]>=110){d[i]=cc[0];d[i+1]=cc[1];d[i+2]=cc[2];d[i+3]=255;}else d[i+3]=0;}
+ }
+ g.putImageData(im,0,0);
+ for(let k=0;k<(o.outline||0);k++){
+  const im2=g.getImageData(0,0,w,h),a=im2.data,b=new Uint8ClampedArray(a),oc=hexs(o.oc||OUT);
+  const op=(x,y)=>x>=0&&y>=0&&x<w&&y<h&&a[(y*w+x)*4+3]>200;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(!op(x,y)&&(op(x-1,y)||op(x+1,y)||op(x,y-1)||op(x,y+1)||(k>0&&(op(x-1,y-1)||op(x+1,y+1)||op(x+1,y-1)||op(x-1,y+1))))){const i=(y*w+x)*4;b[i]=oc[0];b[i+1]=oc[1];b[i+2]=oc[2];b[i+3]=255;}
+  im2.data.set(b);g.putImageData(im2,0,0);
+ }
+ let out=c;
+ if(o.shadow){
+  const s=mk(w,h),sg=s.getContext('2d');
+  const sh=mk(w,h),shg=sh.getContext('2d');shg.drawImage(c,0,0);shg.globalCompositeOperation='source-in';shg.fillStyle=o.shadow;shg.fillRect(0,0,w,h);
+  sg.drawImage(sh,2,2);sg.drawImage(c,0,0);out=s;
+ }
+ TXT.set(key,out);return out;
+}
+const bandBall=fr=>fr<.2?'#fbffd6':fr<.45?'#ecfb6a':fr<.7?P.ball:fr<.88?'#a9d12a':'#7aa818';
+
+/* ---------- bola ---------- */
+const BALL=[".bb.","bLbb","bbbS",".SS."];
+function drawBall(g,x,y){x=Math.round(x)-2;y=Math.round(y)-2;
+ for(let r=0;r<4;r++)for(let i=0;i<4;i++){const k=BALL[r][i];if(k==='.')continue;g.fillStyle=k==='L'?P.ballL:k==='S'?P.ballS:P.ball;g.fillRect(x+i,y+r,1,1);}
+ g.fillStyle=OUT;[[1,-1],[2,-1],[-1,1],[-1,2],[4,1],[4,2],[1,4],[2,4],[0,0],[3,0],[0,3],[3,3]].forEach(([a,b])=>g.fillRect(x+a,y+b,1,1));
+}
+function shadow(g,x,y,w){g.fillStyle='rgba(5,8,28,.45)';const r=Math.round(w/2);g.fillRect(Math.round(x-r),Math.round(y),r*2,1);g.fillRect(Math.round(x-r+1),Math.round(y-1),r*2-2,1);g.fillRect(Math.round(x-r+1),Math.round(y+1),r*2-2,1);}
+function spark(g,x,y,k){x=Math.round(x);y=Math.round(y);const L=2+k;g.fillStyle='#ffffff';
+ for(let i=1;i<=L;i++){g.fillRect(x+i,y,1,1);g.fillRect(x-i,y,1,1);g.fillRect(x,y+i,1,1);g.fillRect(x,y-i,1,1);}
+ g.fillStyle=P.sun;for(let i=1;i<L;i++){g.fillRect(x+i,y+i,1,1);g.fillRect(x-i,y-i,1,1);g.fillRect(x+i,y-i,1,1);g.fillRect(x-i,y+i,1,1);}
+}
+
+/* ---------- cartões de golpe ---------- */
+const CW=72,CHh=60,SX=8,SY=17,GROUND=52;
+const bgCache={};
+function cardBg(glass){
+ const k=glass?'g':'n';if(bgCache[k])return bgCache[k];
+ const c=mk(CW,CHh),g=c.getContext('2d');
+ const bands=['#141b4a','#121845','#10163f','#0e1439','#0c1234'];
+ for(let i=0;i<5;i++){g.fillStyle=bands[i];g.fillRect(0,i*8,CW,8);}
+ for(let x=1;x<CW;x+=3){const h=(x*37)%7;g.fillStyle=['#2c377a','#3a2f6a','#24306c'][x%3];g.fillRect(x,30+(h%3),2,2);}
+ g.fillStyle=P.courtS;g.fillRect(0,40,CW,3);
+ g.fillStyle=P.court;g.fillRect(0,43,CW,CHh-43);
+ for(let y=44;y<CHh;y+=2)for(let x=(y%4?0:1);x<CW;x+=4){g.fillStyle='#2457dc';g.fillRect(x,y,1,1);}
+ g.fillStyle=P.line;g.fillRect(0,56,CW,1);
+ if(glass){g.fillStyle='rgba(143,227,255,.22)';g.fillRect(63,8,9,45);g.fillStyle=P.glassL;g.fillRect(63,8,9,1);g.fillStyle='#5aa7c9';g.fillRect(63,8,1,45);
+  g.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<6;i++)g.fillRect(66+((i/2)|0),14+i*2,1,1);}
+ bgCache[k]=c;return c;
+}
+function resolvePath(A,h){
+ return A.path.map(p=>{let x=p[1],y=p[2];if(x==='C')x=SX+A.C.x;if(y==='C')y=SY+A.C.y;if(x==='Hx')x=SX+A.C.x-2;if(y==='Hy')y=SY+A.C.y-16;return {t:p[0],x,y,arc:p[3]||0,fx:p[4]};});
+}
+function ballAt(P0,dt){
+ if(dt<P0[0].t||dt>P0[P0.length-1].t)return null;
+ for(let i=0;i<P0.length-1;i++){const a=P0[i],b=P0[i+1];if(dt<=b.t){const u=(dt-a.t)/(b.t-a.t);return {x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u-b.arc*Math.sin(Math.PI*u)};}}
+ return null;
+}
+function drawCard(g,ch,name,el,back){
+ const A=ANIMS[name],path=resolvePath(A);
+ const pre=Math.max(0,-path[0].t-A.hit);
+ const ae=el-pre,dt=el-(pre+A.hit);
+ g.drawImage(cardBg(A.glass),0,0);
+ const f=(ae>=0&&ae<A.tot)?frameAt(A,ae):loopFrame('idle',el);
+ const gl=path.find(p=>p.fx==='glass');
+ if(gl&&dt>gl.t&&dt<gl.t+160){g.fillStyle='rgba(255,255,255,'+(.7*(1-(dt-gl.t)/160)).toFixed(2)+')';g.fillRect(63,8,9,45);}
+ shadow(g,SX+FOOTX,GROUND+1,12-(f.j||0));
+ g.drawImage(sprite(ch,f,A.trail,back),SX,SY);
+ const b=ballAt(path,dt);
+ if(b){if(b.y<GROUND)shadow(g,b.x,GROUND+1,4);drawBall(g,b.x,b.y);}
+ if(dt>=0&&dt<150)spark(g,SX+A.C.x,SY+A.C.y,dt<75?2:1);
+ return pre+Math.max(A.tot,A.hit+path[path.length-1].t)+600;
+}
+
+/* ---------- quadra 256x224 ---------- */
+function proj(x,y,z){const t=y/20,s=10.4+8*t;return {x:128+(x-5)*s,y:60+146*t-(z||0)*s*.7,s};}
+function line(g,x0,y0,x1,y1,c){x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);g.fillStyle=c;
+ const dx=Math.abs(x1-x0),dy=-Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1;let e=dx+dy;
+ for(let n=0;n<600;n++){g.fillRect(x0,y0,1,1);if(x0===x1&&y0===y1)break;const e2=2*e;if(e2>=dy){e+=dy;x0+=sx;}if(e2<=dx){e+=dx;y0+=sy;}}}
+function poly(g,pts,c){
+ g.fillStyle=c;const ys=pts.map(p=>p.y),y0=Math.ceil(Math.min(...ys)),y1=Math.floor(Math.max(...ys));
+ for(let y=y0;y<=y1;y++){let xs=[];for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];if((a.y<=y&&b.y>y)||(b.y<=y&&a.y>y)){xs.push(a.x+(y-a.y)*(b.x-a.x)/(b.y-a.y));}}
+  if(xs.length>=2){const l=Math.round(Math.min(...xs)),r=Math.round(Math.max(...xs));g.fillRect(l,y,r-l,1);}}
+}
+function wallX(g,x,y0,y1,z0,z1,c){poly(g,[proj(x,y0,z0),proj(x,y1,z0),proj(x,y1,z1),proj(x,y0,z1)],c);}
+function meshX(g,x,y0,y1,z0,z1){
+ for(let y=y0;y<=y1+1e-6;y+=.5)line(g,proj(x,y,z0).x,proj(x,y,z0).y,proj(x,y,z1).x,proj(x,y,z1).y,'#39415e');
+ for(let z=z0;z<=z1+1e-6;z+=.5)line(g,proj(x,y0,z).x,proj(x,y0,z).y,proj(x,y1,z).x,proj(x,y1,z).y,'#39415e');
+}
+let courtStatic=null;
+function buildCourt(){
+ const c=mk(256,224),g=c.getContext('2d');
+ const bands=['#1a2259','#172054','#151c4d','#131a47','#111741','#10163c','#0e1436','#0d1231'];
+ for(let i=0;i<28;i++){g.fillStyle=bands[Math.min(7,i>>2)];g.fillRect(0,i*8,256,8);}
+ // placas de patrocinador
+ g.fillStyle='#0b1030';g.fillRect(0,22,256,10);
+ const t1=ptext('PADEL TOUR',8,P.sun);g.drawImage(t1,Math.round(146-t1.width/2),20);
+ // piso externo
+ g.fillStyle='#0c1235';g.fillRect(0,58,256,166);
+ // quadra
+ poly(g,[proj(0,0),proj(10,0),proj(10,20),proj(0,20)],P.court);
+ for(let y=0;y<20;y+=.5){for(let x=0;x<10;x+=.5){if(((x*2+y*2)|0)%2)continue;const p=proj(x+.25,y+.25);if(((p.x|0)+(p.y|0))%3===0){g.fillStyle='#2457dc';g.fillRect(p.x|0,p.y|0,1,1);}}}
+ // parede do fundo distante: vidro + grade
+ poly(g,[proj(0,0,0),proj(10,0,0),proj(10,0,3),proj(0,0,3)],'rgba(143,227,255,.20)');
+ const a=proj(0,0,3),b=proj(10,0,4);
+ for(let x=Math.round(a.x);x<b.x;x+=2)line(g,x,a.y,x,b.y,'#39415e');
+ for(let y=Math.round(b.y);y<a.y;y+=2)line(g,a.x,y,b.x,y,'#39415e');
+ line(g,proj(0,0,3).x,proj(0,0,3).y,proj(10,0,3).x,proj(10,0,3).y,P.glassL);
+ for(let x=0;x<=10;x+=2.5)line(g,proj(x,0,0).x,proj(x,0,0).y,proj(x,0,4).x,proj(x,0,4).y,'#5a6390');
+ const tour=ptext('PADEL TOUR',8,'#ffffff');g.globalAlpha=.35;g.drawImage(tour,Math.round(proj(5,0,0).x-tour.width/2),Math.round(proj(5,0,1.1).y)-4);g.globalAlpha=1;
+ // linhas
+ const W=P.line,L=(x0,y0,x1,y1)=>{const p=proj(x0,y0),q=proj(x1,y1);line(g,p.x,p.y,q.x,q.y,W);};
+ L(0,0,10,0);L(0,20,10,20);L(0,0,0,20);L(10,0,10,20);L(0,3.05,10,3.05);L(0,16.95,10,16.95);L(5,3.05,5,16.95);
+ // paredes laterais
+ [0,10].forEach(x=>{
+  wallX(g,x,0,4,0,3,'rgba(143,227,255,.22)');wallX(g,x,4,6,0,2,'rgba(143,227,255,.22)');
+  meshX(g,x,6,14,0,3);
+  wallX(g,x,14,16,0,2,'rgba(143,227,255,.16)');wallX(g,x,16,20,0,3,'rgba(143,227,255,.16)');
+  [[0,4,3],[4,6,2],[14,16,2],[16,20,3]].forEach(([y0,y1,z])=>{const p=proj(x,y0,z),q=proj(x,y1,z);line(g,p.x,p.y,q.x,q.y,P.glassL);});
+  [0,2,4,6,14,16,18,20].forEach(y=>{const p=proj(x,y,0),q=proj(x,y,y===4||y===6||y===14||y===16?2.9:3);line(g,p.x,p.y,q.x,q.y,'#5a6390');});
+ });
+ // torcida
+ c.crowd=[];for(let row=0;row<3;row++)for(let x=2+row;x<254;x+=4){c.crowd.push({x,y:36+row*5,c:['#ff4d5e','#19d3b0','#ffc83a','#f4f7ff','#8fe3ff','#ff8a1f','#a3add8'][(x*7+row*3)%7],s:(x*13+row*29)%97});}
+ courtStatic=c;
+}
+function drawNet(g){
+ const l=proj(0,10,0),r=proj(10,10,0),lt=proj(0,10,.92),rt=proj(10,10,.92);
+ for(let y=Math.round(lt.y)+1;y<l.y;y+=2)line(g,l.x,y,r.x,y,'rgba(11,16,48,.75)');
+ for(let x=Math.round(l.x);x<r.x;x+=3)line(g,x,lt.y+1,x,l.y,'rgba(11,16,48,.75)');
+ line(g,lt.x,lt.y,rt.x,rt.y,P.line);line(g,lt.x,lt.y+1,rt.x,rt.y+1,'#c9d2f5');
+ g.fillStyle='#5a6390';g.fillRect(Math.round(l.x)-1,Math.round(lt.y),2,Math.round(l.y-lt.y)+1);g.fillRect(Math.round(r.x)-1,Math.round(rt.y),2,Math.round(r.y-rt.y)+1);
+}
+
+/* ---------- rali da tela título ---------- */
+const PL=[{ch:CH[0],x:3,y:18.2,back:1},{ch:CH[1],x:7,y:15.4,back:1},{ch:CH[2],x:3,y:2.2,back:0},{ch:CH[3],x:7,y:4.6,back:0}];
+const SEG=[
+ {f:[3.6,17.9,.9],to:[6.5,5.5,0],d:950,ap:1.3,hit:[0,'drive']},
+ {to:[6.8,3.6,1],d:320,ap:.6},
+ {to:[4.2,17.6,0],d:1400,ap:5.5,hit:[3,'lob']},
+ {to:[4.6,20,1.8],d:380,ap:.2,fx:'glass'},
+ {to:[4.4,18.6,.8],d:460,ap:.5},
+ {to:[7.6,6.2,0],d:1050,ap:2,hit:[0,'saida'],pop:'SAÍDA DE PAREDE'},
+ {to:[7.4,4.2,.9],d:300,ap:.6},
+ {to:[7.4,14.8,2.4],d:950,ap:2.5,hit:[3,'drive']},
+ {to:[2.4,5.5,0],d:480,ap:.1,hit:[1,'vibora'],pop:'VÍBORA!'},
+ {to:[0,3.4,1],d:260,ap:.2,fx:'glassL'},
+ {to:[1.2,1.4,0],d:420,ap:.6,point:1},
+ {to:[1.2,1.4,0],d:1300,ap:0}
+];
+(function prep(){let t=0,prev=SEG[0].f;SEG.forEach(s=>{s.f=s.f||prev;s.t=t;t+=s.d;prev=s.to;});SEG.total=t;
+ PL.forEach(p=>{p.home=[p.x,p.y];p.kf=[{t:0,x:p.x,y:p.y}];p.hits=[];});
+ SEG.forEach(s=>{if(s.hit){const p=PL[s.hit[0]];const fx=s.f[0]-.55,fy=s.f[1]+(p.back?.25:-.1);p.kf.push({t:s.t-ANIMS[s.hit[1]].hit,x:fx,y:fy});p.kf.push({t:s.t+250,x:fx,y:fy});p.hits.push({t:s.t,a:s.hit[1]});}});
+ const kai=PL[2];kai.kf.push({t:SEG[9].t,x:3,y:2.2},{t:SEG[10].t+SEG[10].d,x:1.9,y:2});
+ PL.forEach(p=>{p.kf.sort((a,b)=>a.t-b.t);p.kf.push({t:SEG.total,x:p.home[0],y:p.home[1]});});
+})();
+function ballPos(T){for(const s of SEG){if(T<s.t+s.d){const u=(T-s.t)/s.d;return {x:s.f[0]+(s.to[0]-s.f[0])*u,y:s.f[1]+(s.to[1]-s.f[1])*u,z:s.f[2]+(s.to[2]-s.f[2])*u+4*s.ap*u*(1-u),seg:s,u};}}return null;}
+function plPos(p,T){const k=p.kf;for(let i=0;i<k.length-1;i++){if(T<k[i+1].t){const a=k[i],b=k[i+1],u=b.t>a.t?(T-a.t)/(b.t-a.t):1;return {x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u,mv:Math.hypot(b.x-a.x,b.y-a.y)/(b.t-a.t+1)};}}return {x:k[k.length-1].x,y:k[k.length-1].y,mv:0};}
+function plFrame(p,T,now){for(const h of p.hits){const A=ANIMS[h.a],s=h.t-A.hit;if(T>=s&&T<s+A.tot)return {f:frameAt(A,T-s),tr:A.trail};}
+ const pos=plPos(p,T);return {f:pos.mv>.0006?loopFrame('run',now):loopFrame('idle',now+p.home[0]*90),tr:null};}
+
+const scene=document.getElementById('scene'),sg=scene.getContext('2d');
+const phone=document.getElementById('phoneView'),pg=phone.getContext('2d');
+function hud(g,T){
+ const won=T>SEG[10].t+200;
+ g.fillStyle='rgba(11,16,48,.88)';g.fillRect(4,4,88,24);g.fillStyle=P.line;g.fillRect(4,4,88,1);g.fillRect(4,27,88,1);g.fillRect(4,4,1,24);g.fillRect(91,4,1,24);
+ g.fillStyle=P.coral;g.fillRect(8,8,6,6);g.fillStyle=P.mint;g.fillRect(8,17,6,6);
+ g.drawImage(ptext('SOL 3',8,P.line),14,5);g.drawImage(ptext('MAR 2',8,P.line),14,14);
+ g.drawImage(ptext(won?'40':'30',8,won?P.ball:P.line),66,5);g.drawImage(ptext('30',8,P.line),66,14);
+ g.fillStyle='rgba(11,16,48,.88)';g.fillRect(200,4,52,13);
+ g.drawImage(ptext('SET 1',8,P.glass),199,3);
+}
+function renderScene(now){
+ const T=now%SEG.total,g=sg;
+ g.drawImage(courtStatic,0,0);
+ courtStatic.crowd.forEach(c=>{const up=((now/180+c.s)|0)%9===0;g.fillStyle=c.c;g.fillRect(c.x,c.y-(up?1:0),2,2);g.fillStyle='#0b1030';g.fillRect(c.x,c.y+2-(up?1:0),2,1);});
+ const b=ballPos(T);
+ const ents=PL.map(p=>({y:plPos(p,T).y,draw:()=>{const pos=plPos(p,T),pr=proj(pos.x,pos.y),fr=plFrame(p,T,now);shadow(g,pr.x,pr.y+1,10-(fr.f.j||0));g.drawImage(sprite(p.ch,fr.f,fr.tr,p.back),Math.round(pr.x-FOOTX),Math.round(pr.y-FOOTY));}}));
+ ents.push({y:10,draw:()=>drawNet(g)});
+ if(b){ents.push({y:b.y,draw:()=>{const s=proj(b.x,b.y,0),q=proj(b.x,b.y,b.z);shadow(g,s.x,s.y,3);drawBall(g,q.x,q.y);}});}
+ ents.sort((a,c)=>a.y-c.y).forEach(e=>e.draw());
+ // vidro do fundo perto da câmera
+ poly(g,[proj(0,20,0),proj(10,20,0),proj(10,20,3),proj(0,20,3)],'rgba(143,227,255,.08)');
+ const t3=proj(0,20,3),t4=proj(10,20,3);line(g,t3.x,t3.y,t4.x,t4.y,'rgba(214,246,255,.6)');
+ for(let x=0;x<=10;x+=2.5){const p=proj(x,20,0),q=proj(x,20,3);line(g,p.x,p.y,q.x,q.y,'rgba(90,99,144,.7)');}
+ // flashes de vidro e impactos
+ SEG.forEach(s=>{const e=s.t+s.d,dt=T-e;if(s.fx&&dt>0&&dt<170){const p=proj(s.to[0],s.to[1],s.to[2]);g.fillStyle='rgba(255,255,255,'+(.8*(1-dt/170)).toFixed(2)+')';if(s.fx==='glass')g.fillRect(Math.round(p.x)-9,Math.round(p.y)-8,18,14);else g.fillRect(Math.round(p.x)-3,Math.round(p.y)-8,6,14);}
+  if(s.hit){const d2=T-s.t;if(d2>=0&&d2<140){const p=proj(s.f[0],s.f[1],s.f[2]);spark(g,p.x,p.y,d2<70?2:1);}}
+  if(s.pop){const d3=T-s.t;if(d3>=0&&d3<1100){const tx=ptext(s.pop,8,bandBall,{outline:2,shadow:P.coral});const yy=96-Math.round(Math.max(0,8-d3/25));g.drawImage(tx,Math.round(128-tx.width/2),yy);}}
+  if(s.point){const d4=T-e;if(d4>0&&d4<1300){const tx=ptext('PONTO SOL',8,'#ffffff',{outline:2,oc:'#b8263a'});g.drawImage(tx,Math.round(128-tx.width/2),112);}}
+ });
+ hud(g,T);
+ pg.drawImage(scene,0,0);
+}
+
+/* ---------- montagem ---------- */
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+const cards=[];
+function setupShots(){
+ const host=document.getElementById('shots');
+ const order=['saque','drive','reves','voleio','lob','chiquita','bandeja','vibora','remate','saida','bajada'];
+ const who={saque:0,drive:0,reves:3,voleio:3,lob:3,chiquita:2,bandeja:1,vibora:2,remate:1,saida:0,bajada:1};
+ order.forEach(k=>{
+  const S=SHOTS[k],A=ANIMS[k],box=el('article','shot');
+  const cv=mk(CW,CHh);cv.setAttribute('aria-label','Animação: '+S.nome);box.appendChild(cv);
+  const body=el('div','shot-body');
+  body.appendChild(el('h3','',S.nome));
+  body.appendChild(el('p','',S.desc));
+  body.appendChild(el('div','input',S.input));
+  const pips=el('div','pips');
+  ['Velocidade','Altura','Efeito'].forEach((n,i)=>{pips.appendChild(el('span','',n));const bar=el('span','bar');bar.style.setProperty('--c',A.trail);for(let j=0;j<5;j++)bar.appendChild(el('span',j<S.r[i]?'on':''));pips.appendChild(bar);});
+  body.appendChild(pips);box.appendChild(body);host.appendChild(box);
+  cards.push({g:cv.getContext('2d'),ch:CH[who[k]],k,period:1,start:Math.random()*400});
+ });
+}
+function setupCast(){
+ const host=document.getElementById('cast');
+ CH.forEach((ch,i)=>{
+  const box=el('article','card'),cv=mk(96,52);cv.setAttribute('aria-label',ch.nome+' parado e correndo');box.appendChild(cv);
+  const body=el('div','shot-body');
+  body.appendChild(el('h3','',ch.nome+'<span>Time '+ch.time+' · '+ch.estilo+'</span>'));
+  body.appendChild(el('p','',ch.bio));
+  const pips=el('div','pips');
+  Object.entries(ch.st).forEach(([n,v])=>{pips.appendChild(el('span','',n));const bar=el('span','bar');bar.style.setProperty('--c',ch.shirt);for(let j=0;j<5;j++)bar.appendChild(el('span',j<v?'on':''));pips.appendChild(bar);});
+  body.appendChild(pips);box.appendChild(body);host.appendChild(box);
+  cards.push({cast:1,g:cv.getContext('2d'),ch,i});
+ });
+}
+function drawCast(c,now){
+ const g=c.g;g.drawImage(cardBg(0),0,8,72,52,0,0,72,52);g.drawImage(cardBg(0),0,8,24,52,72,0,24,52);
+ const f1=loopFrame('idle',now+c.i*170),f2=loopFrame('run',now+c.i*90);
+ shadow(g,4+FOOTX,45,10);g.drawImage(sprite(c.ch,f1,null,0),4,10);
+ shadow(g,44+FOOTX,45,10);g.drawImage(sprite(c.ch,f2,null,1),44,10);
+}
+function setupSwatches(){
+ const sw=[['Noite de arena','#0b1030','fundo, contorno'],['Arquibancada','#141b4a','painéis'],['Piso azul','#1f4fd1','quadra'],['Piso sombra','#173a9e','profundidade'],['Vidro','#8fe3ff','paredes, LOB'],['Grade','#39415e','malha metálica'],['Bola neon','#d7f23a','acento único'],['Ouro','#ffc83a','BATER, títulos'],['Time Sol','#ff4d5e','dupla 1, AÉREO'],['Time Mar','#19d3b0','dupla 2'],['Víbora','#ff5ad1','rastro de efeito'],['Remate','#ff8a1f','rastro de potência']];
+ const host=document.getElementById('swatches');
+ sw.forEach(([n,h,r])=>{const d=el('div','sw');d.innerHTML='<i style="background:'+h+'"></i><div><b>'+n+'</b><code>'+h.toUpperCase()+' · '+r+'</code></div>';host.appendChild(d);});
+}
+const fxCards=[];
+function setupFx(){
+ const host=document.getElementById('fx');
+ [['ball','Bola · 4 quadros','4×4 px com sombra no chão'],['spark','Impacto','3 quadros no contato'],['glass','Flash do vidro','rebote em parede'],['trail','Rastros','cor = tipo de golpe'],['pop','Texto de golpe','aparece em golpes especiais']].forEach(([k,t,s])=>{
+  const f=el('figure'),cv=mk(64,40);f.appendChild(cv);f.appendChild(el('figcaption','','<b>'+t+'</b>'+s));host.appendChild(f);fxCards.push({k,g:cv.getContext('2d')});
+ });
+}
+function drawFx(c,now){
+ const g=c.g;g.fillStyle='#0e1439';g.fillRect(0,0,64,40);g.fillStyle=P.court;g.fillRect(0,30,64,10);
+ if(c.k==='ball'){const t=(now%900)/900,y=30-Math.abs(Math.sin(t*Math.PI))*22;shadow(g,32,31,4-(30-y)/10);drawBall(g,32,y);}
+ if(c.k==='spark'){spark(g,32,18,((now/90)|0)%3);}
+ if(c.k==='glass'){g.fillStyle='rgba(143,227,255,.22)';g.fillRect(40,2,20,30);g.fillStyle=P.glassL;g.fillRect(40,2,20,1);const t=now%1200;let x=8+t/18;if(t>580){x=40-(t-580)/18;}if(t>560&&t<720){g.fillStyle='rgba(255,255,255,'+(.8*(1-(t-560)/160)).toFixed(2)+')';g.fillRect(40,8,20,18);}drawBall(g,Math.min(38,x),16);}
+ if(c.k==='trail'){[P.sun,P.glass,P.line,P.magenta,P.orange,P.mint].forEach((cc,i)=>{g.fillStyle=cc;for(let j=0;j<6;j++){g.globalAlpha=.25+j*.12;g.fillRect(4+j*3,4+i*5,4,4);}g.globalAlpha=1;});g.drawImage(ptext('6',8,P.line),36,9);}
+ if(c.k==='pop'){const tx=ptext('VÍBORA!',8,bandBall,{outline:2,shadow:P.coral});const b=Math.round(Math.max(0,6-(now%1400)/30));g.drawImage(tx,Math.round(32-tx.width/2),12-b);}
+}
+
+/* logo */
+function drawLogo(cv){
+ const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);
+ const big=ptext('PADEL',32,bandBall,{outline:2,shadow:P.coral});
+ g.drawImage(big,0,4);
+ const rx=58,ry=52;
+ g.fillStyle=P.coral;g.fillRect(rx,ry,104,18);g.fillStyle='#b8263a';g.fillRect(rx,ry+16,104,2);
+ g.fillStyle=P.coral;g.fillRect(rx-6,ry+3,6,12);g.fillRect(rx+104,ry+3,6,12);
+ g.fillStyle=OUT;g.fillRect(rx-6,ry+8,3,2);g.fillRect(rx+107,ry+8,3,2);
+ const t=ptext('TOUR',16,P.line,{outline:1});g.drawImage(t,rx+52-Math.round(t.width/2),ry-3);
+ for(let i=0;i<4;i++){g.globalAlpha=.2+i*.18;g.fillStyle=P.ball;g.fillRect(150+i*9,24-i*4,5,3);}g.globalAlpha=1;
+ g.save();g.translate(190,8);g.scale(2,2);drawBall(g,2,2);g.restore();
+}
+function drawIcon(cv){
+ const W=32,g=cv.getContext('2d',{willReadFrequently:true});g.clearRect(0,0,W,W);
+ const ch={frame:P.sun,face:'#2a2f55',face2:'#3c4479'};
+ const cx=14,cy=12,a=-Math.PI/4,dx=Math.cos(a+Math.PI/2),dy=Math.sin(a+Math.PI/2);
+ for(let i=8;i<17;i++){g.fillStyle=i>12?P.coral:'#2a2f55';g.fillRect(Math.floor(cx+(-dx)*-i*.9+0),Math.floor(cy+dy*i*.9),2,2);}
+ for(let Y=0;Y<W;Y++)for(let X=0;X<W;X++){const ux=X+.5-cx,uy=Y+.5-cy,u=ux*Math.cos(a)+uy*Math.sin(a),v=-ux*Math.sin(a)+uy*Math.cos(a),e=u*u/81+v*v/64;
+  if(e<=1){g.fillStyle=e>.62?ch.frame:(((X>>1)+(Y>>1))%2&&e<.5&&((X%3===0)&&(Y%3===0))?'#0b1030':(((X+Y)&1)?ch.face:ch.face2));g.fillRect(X,Y,1,1);}}
+ g.save();g.translate(19,15);g.scale(2,2);drawBall(g,2,2);g.restore();
+ outline(g,W,W);
+}
+
+/* laboratório */
+const lab={g:document.getElementById('lab').getContext('2d'),ctx:'baixa',dir:'0',anim:null,t0:0,ch:CH[2]};
+function resolveShot(ctx,btn,dir,held){
+ if(ctx==='saque'){if(btn==='C')return {k:'saque',n:'SAQUE',d:'AÉREO não existe no saque: pela regra o saque é sempre por baixo, depois do quique. O jogo faz o saque chapado.'};
+  return btn==='A'?{k:'saque',n:'SAQUE CHAPADO',d:'Rápido e reto, quica e corre para o vidro do fundo.'}:{k:'saque',n:'SAQUE CORTADO',d:'Lento e com efeito: quica baixo e morre no vidro.'};}
+ if(ctx==='baixa'){if(btn==='B')return {k:'lob',n:'LOB',d:'Globo alto por cima da dupla na rede. É o golpe para retomar a rede.'};
+  if(dir==='down'&&btn==='A')return {k:'chiquita',n:'CHIQUITA',d:'Bola lenta e baixa nos pés do adversário na rede.'};
+  return {k:btn==='A'&&dir==='up'?'drive':'drive',n:btn==='C'?'DRIVE (SEM AÉREO)':'DRIVE',d:btn==='C'?'Sem bola alta não há golpe aéreo: o botão vira golpe normal.':'Golpe de fundo após o quique. Revés sai sozinho quando a bola vem do outro lado.'};}
+ if(ctx==='vidro'){if(btn==='C')return {k:'bajada',n:'BAJADA',d:'O rebote saiu alto do vidro: ataque de cima para baixo.'};
+  if(btn==='B')return {k:'saida',n:'SAÍDA EM LOB',d:'Deixa bater no vidro e devolve alto, para recuperar a posição.'};
+  return {k:'saida',n:'SAÍDA DE PAREDE',d:'Deixa bater no vidro do fundo e contra-ataca no rebote.'};}
+ if(btn==='A')return {k:'voleio',n:'VOLEIO',d:'Bloqueio curto antes do quique.'};
+ if(btn==='B')return {k:'lob',n:'LOB DE DEFESA',d:'Ganha tempo mandando a bola alta de volta.'};
+ if(held)return {k:'remate',n:'REMATE POR 3',d:'Carga completa: smash chapado que quica e sai por cima do vidro lateral.'};
+ if(dir==='up')return {k:'vibora',n:'VÍBORA',d:'Bandeja agressiva com efeito lateral; sai rasteira do vidro.'};
+ return {k:'bandeja',n:'BANDEJA',d:'Aéreo com corte que mantém a dupla na rede.'};
+}
+function seg(id,key){const host=document.getElementById(id);host.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;host.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));lab[key]=b.dataset.v;});}
+function setupLab(){
+ seg('ctx','ctx');seg('dir','dir');
+ document.querySelectorAll('.gbtn').forEach(b=>{
+  let down=0;
+  const start=e=>{e.preventDefault();down=performance.now();b.classList.add('down');};
+  const end=e=>{if(!down)return;e.preventDefault();b.classList.remove('down');const held=performance.now()-down>450;down=0;fire(b.dataset.b,held);};
+  b.addEventListener('pointerdown',start);b.addEventListener('pointerup',end);b.addEventListener('pointerleave',()=>{if(down){b.classList.remove('down');down=0;}});
+  b.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){if(!down){down=performance.now();b.classList.add('down');}e.preventDefault();}});
+  b.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')end(e);});
+ });
+ function fire(btn,held){const r=resolveShot(lab.ctx,btn,lab.dir,held);lab.anim=r.k;lab.t0=performance.now();
+  document.getElementById('outName').textContent=r.n;document.getElementById('outDesc').textContent=r.d;}
+}
+function drawLab(now){
+ const g=lab.g;
+ if(lab.anim){const p=drawCard(g,lab.ch,lab.anim,now-lab.t0,0);if(now-lab.t0>p)lab.anim=null;}
+ else{g.drawImage(cardBg(lab.ctx==='vidro'),0,0);const f=loopFrame('idle',now);shadow(g,SX+FOOTX,GROUND+1,12);g.drawImage(sprite(lab.ch,f,null,0),SX,SY);}
+}
+
+let last=0;
+function tick(now){
+ if(now-last>=16){last=now;
+  renderScene(now);
+  cards.forEach(c=>{if(c.cast)drawCast(c,now);else{const el2=(now+c.start)%c.period;c.period=drawCard(c.g,c.ch,c.k,el2,0);}});
+  fxCards.forEach(c=>drawFx(c,now));
+  drawLab(now);
+ }
+ requestAnimationFrame(tick);
+}
+function init(){
+ buildCourt();setupShots();setupCast();setupSwatches();setupFx();setupLab();
+ drawLogo(document.getElementById('logo'));drawLogo(document.getElementById('logo2'));
+ drawIcon(document.getElementById('icon'));drawIcon(document.getElementById('icon2'));
+ cards.forEach(c=>{if(!c.cast){c.period=drawCard(c.g,c.ch,c.k,0,0);}});
+ const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(reduce){renderScene(4200);cards.forEach(c=>{if(c.cast)drawCast(c,0);else drawCard(c.g,c.ch,c.k,ANIMS[c.k].hit+Math.max(0,-resolvePath(ANIMS[c.k])[0].t-ANIMS[c.k].hit),0);});fxCards.forEach(c=>drawFx(c,300));
+  const loopLab=n=>{drawLab(n);requestAnimationFrame(loopLab);};requestAnimationFrame(loopLab);}
+ else requestAnimationFrame(tick);
+}
+let started=false;const go=()=>{if(!started){started=true;init();}};
+try{Promise.all([document.fonts.load('8px "Press Start 2P"'),document.fonts.load('8px "Silkscreen"','ÍÉ'),document.fonts.load('32px "Press Start 2P"')]).then(go,go);}catch(e){go();}
+setTimeout(go,2500);
+})();
+</script>
